@@ -317,18 +317,18 @@ export default function Funcionarios() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Funcionários</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Funcionários</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Gerencie os funcionários do estabelecimento!
           </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={resetForm} className="w-full md:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Novo Funcionário
             </Button>
@@ -513,7 +513,7 @@ export default function Funcionarios() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
             <Users className="h-5 w-5" />
             Lista de Funcionários
           </CardTitle>
@@ -523,15 +523,48 @@ export default function Funcionarios() {
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <Input
-              placeholder="Buscar por nome ou email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:max-w-sm"
-            />
+            <Input placeholder="Buscar por nome ou email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:max-w-sm" />
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile card view */}
+          <div className="space-y-3 md:hidden">
+            {filteredFuncionarios.map((funcionario) => {
+              const comissao = getComissao(funcionario.id);
+              return (
+                <div key={funcionario.id} className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="font-medium text-foreground">{funcionario.nome}</p>
+                      <p className="text-sm text-muted-foreground">{funcionario.email}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(funcionario)}>
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{getCargoLabel(funcionario.cargo)}</Badge>
+                    <Badge variant={funcionario.nivel_acesso === "administrador" ? "default" : "secondary"}>
+                      {getNivelLabel(funcionario.nivel_acesso)}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Comissão: {comissao ? (comissao.tipo_comissao === "percentual" ? `${comissao.valor}%` : `R$ ${comissao.valor.toFixed(2)}`) : "Não configurada"}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <Switch checked={funcionario.ativo} onCheckedChange={() => handleToggleAtivo(funcionario)} />
+                      <span className={funcionario.ativo ? "text-green-600" : "text-red-600"}>
+                        {funcionario.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="hidden md:block overflow-x-auto">
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
@@ -549,68 +582,19 @@ export default function Funcionarios() {
                   const comissao = getComissao(funcionario.id);
                   return (
                     <TableRow key={funcionario.id}>
-                      <TableCell className="font-medium">
-                        {funcionario.nome}
-                      </TableCell>
+                      <TableCell className="font-medium">{funcionario.nome}</TableCell>
                       <TableCell>{funcionario.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {getCargoLabel(funcionario.cargo)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            funcionario.nivel_acesso === "administrador"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {getNivelLabel(funcionario.nivel_acesso)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {comissao ? (
-                          <span>
-                            {comissao.tipo_comissao === "percentual"
-                              ? `${comissao.valor}%`
-                              : `R$ ${comissao.valor.toFixed(2)}`}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            Não configurada
-                          </span>
-                        )}
-                      </TableCell>
+                      <TableCell><Badge variant="outline">{getCargoLabel(funcionario.cargo)}</Badge></TableCell>
+                      <TableCell><Badge variant={funcionario.nivel_acesso === "administrador" ? "default" : "secondary"}>{getNivelLabel(funcionario.nivel_acesso)}</Badge></TableCell>
+                      <TableCell>{comissao ? (comissao.tipo_comissao === "percentual" ? `${comissao.valor}%` : `R$ ${comissao.valor.toFixed(2)}`) : <span className="text-muted-foreground">Não configurada</span>}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={funcionario.ativo}
-                            onCheckedChange={() =>
-                              handleToggleAtivo(funcionario)
-                            }
-                          />
-                          <span
-                            className={
-                              funcionario.ativo
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }
-                          >
-                            {funcionario.ativo ? "Ativo" : "Inativo"}
-                          </span>
+                          <Switch checked={funcionario.ativo} onCheckedChange={() => handleToggleAtivo(funcionario)} />
+                          <span className={funcionario.ativo ? "text-green-600" : "text-red-600"}>{funcionario.ativo ? "Ativo" : "Inativo"}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(funcionario)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(funcionario)}><Edit2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   );
