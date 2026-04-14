@@ -29,7 +29,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </header>
 
-          <div className="flex-1 p-6">{children}</div>
+          <div className="flex-1 p-3 md:p-6">{children}</div>
         </main>
       </div>
     </SidebarProvider>

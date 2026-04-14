@@ -333,7 +333,7 @@ export default function Relatorios() {
           </div>
 
           {/* Gráficos */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Faturamento por Dia</CardTitle>
@@ -398,7 +398,7 @@ export default function Relatorios() {
           </Card>
 
           {/* Tabelas */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Serviços Mais Populares</CardTitle>
