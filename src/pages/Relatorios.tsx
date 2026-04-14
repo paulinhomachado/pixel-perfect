@@ -241,11 +241,11 @@ export default function Relatorios() {
   ] : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
-          <p className="text-muted-foreground">Análise detalhada do desempenho!</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Relatórios</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Análise detalhada do desempenho!</p>
         </div>
       </div>
 
@@ -284,48 +284,48 @@ export default function Relatorios() {
       {relatorio && (
         <>
           {/* Cards de Métricas */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+                <CardTitle className="text-xs md:text-sm font-medium">Faturamento Total</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-lg md:text-2xl font-bold">
                   R$ {relatorio.faturamentoTotal.toFixed(2)}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Serviços Realizados</CardTitle>
-                <Scissors className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+                <CardTitle className="text-xs md:text-sm font-medium">Serviços Realizados</CardTitle>
+                <Scissors className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{relatorio.servicosRealizados}</div>
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-lg md:text-2xl font-bold">{relatorio.servicosRealizados}</div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pago aos Profissionais</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+                <CardTitle className="text-xs md:text-sm font-medium">Pago aos Profissionais</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-lg md:text-2xl font-bold">
                   R$ {relatorio.valorProfissionais.toFixed(2)}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Valor Líquido</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+                <CardTitle className="text-xs md:text-sm font-medium">Valor Líquido</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-lg md:text-2xl font-bold text-green-600">
                   R$ {relatorio.valorLiquido.toFixed(2)}
                 </div>
               </CardContent>
