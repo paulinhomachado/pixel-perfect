@@ -40,48 +40,16 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  // Real-time subscriptions
+  // Real-time subscriptions (no-op with current Hostinger client)
   useEffect(() => {
-    const clientesChannel = supabase
-      .channel('clientes-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'clientes' },
-        () => {
-          supabase.from('clientes').select('*').then(({ data }) => {
-            if (data) setClientes(data);
-          });
-        }
-      )
-      .subscribe();
-
-    const agendamentosChannel = supabase
-      .channel('agendamentos-changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'agendamentos' },
-        () => {
-          supabase.from('agendamentos').select('*').then(({ data }) => {
-            if (data) setAgendamentos(data);
-          });
-        }
-      )
-      .subscribe();
-
-    const servicosChannel = supabase
-      .channel('servicos-changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'servicos' },
-        () => {
-          supabase.from('servicos').select('*').then(({ data }) => {
-            if (data) setServicos(data);
-          });
-        }
-      )
-      .subscribe();
+    const clientesChannel = supabase.channel().on().subscribe();
+    const agendamentosChannel = supabase.channel().on().subscribe();
+    const servicosChannel = supabase.channel().on().subscribe();
 
     return () => {
-      supabase.removeChannel(clientesChannel);
-      supabase.removeChannel(agendamentosChannel);
-      supabase.removeChannel(servicosChannel);
+      supabase.removeChannel();
+      supabase.removeChannel();
+      supabase.removeChannel();
     };
   }, []);
 
