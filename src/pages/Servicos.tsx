@@ -136,18 +136,16 @@ export default function Servicos() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Serviços</h1>
-          <p className="text-muted-foreground">
-            Gerencie todos os serviços oferecidos!
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Serviços</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Gerencie todos os serviços oferecidos!</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary hover:opacity-90 shadow-violet transition-smooth">
+            <Button className="bg-gradient-primary hover:opacity-90 shadow-violet transition-smooth w-full md:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Novo Serviço
             </Button>
@@ -160,70 +158,22 @@ export default function Servicos() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="nome" className="text-foreground">
-                  Nome do Serviço
-                </Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, nome: e.target.value }))
-                  }
-                  className="bg-input border-border text-foreground"
-                  required
-                />
+                <Label htmlFor="nome" className="text-foreground">Nome do Serviço</Label>
+                <Input id="nome" value={formData.nome} onChange={(e) => setFormData((prev) => ({ ...prev, nome: e.target.value }))} className="bg-input border-border text-foreground" required />
               </div>
               <div>
-                <Label htmlFor="preco" className="text-foreground">
-                  Preço (R$)
-                </Label>
-                <Input
-                  id="preco"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.preco}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, preco: e.target.value }))
-                  }
-                  className="bg-input border-border text-foreground"
-                  required
-                />
+                <Label htmlFor="preco" className="text-foreground">Preço (R$)</Label>
+                <Input id="preco" type="number" step="0.01" min="0" value={formData.preco} onChange={(e) => setFormData((prev) => ({ ...prev, preco: e.target.value }))} className="bg-input border-border text-foreground" required />
               </div>
               <div>
-                <Label htmlFor="tempoMedio" className="text-foreground">
-                  Tempo Médio (minutos)
-                </Label>
-                <Input
-                  id="tempoMedio"
-                  type="number"
-                  min="1"
-                  value={formData.tempoMedio}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      tempoMedio: e.target.value,
-                    }))
-                  }
-                  className="bg-input border-border text-foreground"
-                  required
-                />
+                <Label htmlFor="tempoMedio" className="text-foreground">Tempo Médio (minutos)</Label>
+                <Input id="tempoMedio" type="number" min="1" value={formData.tempoMedio} onChange={(e) => setFormData((prev) => ({ ...prev, tempoMedio: e.target.value }))} className="bg-input border-border text-foreground" required />
               </div>
               <div className="flex gap-3 pt-4">
-                <Button
-                  type="submit"
-                  className="flex-1 bg-gradient-primary hover:opacity-90"
-                >
+                <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">
                   {editingServico ? "Atualizar" : "Cadastrar"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetForm}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
+                <Button type="button" variant="outline" onClick={resetForm} className="flex-1">Cancelar</Button>
               </div>
             </form>
           </DialogContent>
@@ -231,73 +181,63 @@ export default function Servicos() {
       </div>
 
       <Card className="gradient-card border-border shadow-elevated">
-        <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <CardTitle className="text-foreground flex items-center gap-2">
+        <CardHeader className="pb-3 md:pb-6">
+          <div className="flex flex-col gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
+            <CardTitle className="text-foreground flex items-center gap-2 text-base md:text-lg">
               <Scissors className="w-5 h-5 text-primary" />
               Lista de Serviços
             </CardTitle>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar serviços..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full md:w-72 bg-input border-border"
-              />
+              <Input placeholder="Buscar serviços..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-full md:w-72 bg-input border-border" />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table className="min-w-[760px]">
+          {/* Mobile card view */}
+          <div className="space-y-3 md:hidden">
+            {filteredServicos.map((servico) => (
+              <div key={servico.id} className="p-4 rounded-lg bg-secondary/30 border border-border">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{servico.nome}</p>
+                    <p className="text-sm font-semibold text-primary mt-1">R$ {Number(servico.preco).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{servico.tempo_medio} min</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(servico)} className="h-8 w-8 p-0">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(servico.id)} className="h-8 w-8 p-0">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
               <TableHeader>
                 <TableRow className="border-border">
-                  <TableHead className="text-muted-foreground">
-                    Nome do Serviço
-                  </TableHead>
+                  <TableHead className="text-muted-foreground">Nome do Serviço</TableHead>
                   <TableHead className="text-muted-foreground">Preço</TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Tempo Médio
-                  </TableHead>
-                  <TableHead className="text-muted-foreground text-right">
-                    Ações
-                  </TableHead>
+                  <TableHead className="text-muted-foreground">Tempo Médio</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredServicos.map((servico) => (
-                  <TableRow
-                    key={servico.id}
-                    className="border-border hover:bg-secondary/20 transition-smooth"
-                  >
-                    <TableCell className="font-medium text-foreground">
-                      {servico.nome}
-                    </TableCell>
-                    <TableCell className="text-foreground font-semibold text-primary">
-                      R$ {Number(servico.preco).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {servico.tempo_medio} min
-                    </TableCell>
+                  <TableRow key={servico.id} className="border-border hover:bg-secondary/20 transition-smooth">
+                    <TableCell className="font-medium text-foreground">{servico.nome}</TableCell>
+                    <TableCell className="text-foreground font-semibold text-primary">R$ {Number(servico.preco).toFixed(2)}</TableCell>
+                    <TableCell className="text-foreground">{servico.tempo_medio} min</TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(servico)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(servico.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(servico)} className="h-8 w-8 p-0"><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(servico.id)} className="h-8 w-8 p-0"><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

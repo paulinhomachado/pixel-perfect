@@ -136,16 +136,16 @@ export default function Clientes() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
-          <p className="text-muted-foreground">Gerencie todos os clientes</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Clientes</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Gerencie todos os clientes</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary hover:opacity-90 shadow-violet transition-smooth">
+            <Button className="bg-gradient-primary hover:opacity-90 shadow-violet transition-smooth w-full md:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Novo Cliente
             </Button>
@@ -158,51 +158,18 @@ export default function Clientes() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="nome" className="text-foreground">
-                  Nome
-                </Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, nome: e.target.value }))
-                  }
-                  className="bg-input border-border text-foreground"
-                  required
-                />
+                <Label htmlFor="nome" className="text-foreground">Nome</Label>
+                <Input id="nome" value={formData.nome} onChange={(e) => setFormData((prev) => ({ ...prev, nome: e.target.value }))} className="bg-input border-border text-foreground" required />
               </div>
               <div>
-                <Label htmlFor="telefone" className="text-foreground">
-                  Telefone
-                </Label>
-                <Input
-                  id="telefone"
-                  value={formData.telefone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      telefone: e.target.value,
-                    }))
-                  }
-                  className="bg-input border-border text-foreground"
-                  required
-                />
+                <Label htmlFor="telefone" className="text-foreground">Telefone</Label>
+                <Input id="telefone" value={formData.telefone} onChange={(e) => setFormData((prev) => ({ ...prev, telefone: e.target.value }))} className="bg-input border-border text-foreground" required />
               </div>
               <div className="flex gap-3 pt-4">
-                <Button
-                  type="submit"
-                  className="flex-1 bg-gradient-primary hover:opacity-90"
-                >
+                <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">
                   {editingCliente ? "Atualizar" : "Cadastrar"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetForm}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
+                <Button type="button" variant="outline" onClick={resetForm} className="flex-1">Cancelar</Button>
               </div>
             </form>
           </DialogContent>
@@ -210,85 +177,68 @@ export default function Clientes() {
       </div>
 
       <Card className="gradient-card border-border shadow-elevated">
-        <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <CardTitle className="text-foreground flex items-center gap-2">
+        <CardHeader className="pb-3 md:pb-6">
+          <div className="flex flex-col gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
+            <CardTitle className="text-foreground flex items-center gap-2 text-base md:text-lg">
               <Users className="w-5 h-5 text-primary" />
               Lista de Clientes
             </CardTitle>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar clientes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full md:w-72 bg-input border-border"
-              />
+              <Input placeholder="Buscar clientes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-full md:w-72 bg-input border-border" />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table className="min-w-[760px]">
+          {/* Mobile card view */}
+          <div className="space-y-3 md:hidden">
+            {filteredClientes.map((cliente) => (
+              <div key={cliente.id} className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{cliente.nome}</p>
+                    <p className="text-sm text-muted-foreground">{cliente.telefone}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(cliente)} className="h-8 w-8 p-0">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(cliente.id)} className="h-8 w-8 p-0">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4 text-xs text-muted-foreground">
+                  <span>Cadastro: {new Date(cliente.data_cadastro).toLocaleDateString("pt-BR")}</span>
+                  <span>Última visita: {cliente.ultima_visita ? new Date(cliente.ultima_visita).toLocaleDateString("pt-BR") : "Nunca"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
               <TableHeader>
                 <TableRow className="border-border">
                   <TableHead className="text-muted-foreground">Nome</TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Telefone
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Data Cadastro
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Última Visita
-                  </TableHead>
-                  <TableHead className="text-muted-foreground text-right">
-                    Ações
-                  </TableHead>
+                  <TableHead className="text-muted-foreground">Telefone</TableHead>
+                  <TableHead className="text-muted-foreground">Data Cadastro</TableHead>
+                  <TableHead className="text-muted-foreground">Última Visita</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClientes.map((cliente) => (
-                  <TableRow
-                    key={cliente.id}
-                    className="border-border hover:bg-secondary/20 transition-smooth"
-                  >
-                    <TableCell className="font-medium text-foreground">
-                      {cliente.nome}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {cliente.telefone}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {new Date(cliente.data_cadastro).toLocaleDateString(
-                        "pt-BR",
-                      )}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {cliente.ultima_visita
-                        ? new Date(cliente.ultima_visita).toLocaleDateString(
-                            "pt-BR",
-                          )
-                        : "Nunca"}
-                    </TableCell>
+                  <TableRow key={cliente.id} className="border-border hover:bg-secondary/20 transition-smooth">
+                    <TableCell className="font-medium text-foreground">{cliente.nome}</TableCell>
+                    <TableCell className="text-foreground">{cliente.telefone}</TableCell>
+                    <TableCell className="text-foreground">{new Date(cliente.data_cadastro).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-foreground">{cliente.ultima_visita ? new Date(cliente.ultima_visita).toLocaleDateString("pt-BR") : "Nunca"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(cliente)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(cliente.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(cliente)} className="h-8 w-8 p-0"><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(cliente.id)} className="h-8 w-8 p-0"><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
