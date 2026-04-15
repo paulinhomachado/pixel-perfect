@@ -28,7 +28,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, Search, Calendar, Clock, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  Calendar,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -64,6 +72,7 @@ type Agendamento = {
 };
 
 const PAYMENT_OPTIONS = [
+  { value: "em_aberto", label: "Em aberto" },
   { value: "dinheiro", label: "Dinheiro" },
   { value: "cartao_debito", label: "Cartão Débito" },
   { value: "cartao_credito", label: "Cartão de Crédito" },
@@ -116,7 +125,6 @@ export default function Agendamentos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] =
     useState<Agendamento | null>(null);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     clienteId: "",
     servicoId: "",
@@ -130,6 +138,23 @@ export default function Agendamentos() {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("agendamentos-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "agendamentos" },
+        () => {
+          fetchData();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -182,8 +207,6 @@ export default function Agendamentos() {
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast.error("Erro ao carregar dados");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -222,10 +245,10 @@ export default function Agendamentos() {
   });
 
   const agendamentosPendentes = filteredAgendamentos.filter(
-    (a) => a.status !== "concluido"
+    (a) => a.status !== "concluido",
   );
   const agendamentosConcluidos = filteredAgendamentos.filter(
-    (a) => a.status === "concluido"
+    (a) => a.status === "concluido",
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -385,6 +408,31 @@ export default function Agendamentos() {
     setIsDialogOpen(true);
   };
 
+  const handleQuitar = (agendamento: Agendamento) => {
+    setEditingAgendamento(agendamento);
+    const dataHoraUTC = new Date(agendamento.data_hora);
+    const ano = dataHoraUTC.getFullYear();
+    const mes = String(dataHoraUTC.getMonth() + 1).padStart(2, "0");
+    const dia = String(dataHoraUTC.getDate()).padStart(2, "0");
+    const hora = String(dataHoraUTC.getHours()).padStart(2, "0");
+    const minuto = String(dataHoraUTC.getMinutes()).padStart(2, "0");
+
+    setFormData({
+      clienteId: agendamento.cliente_id,
+      servicoId: agendamento.servico_id,
+      funcionarioId: agendamento.funcionario_id || "",
+      data: `${ano}-${mes}-${dia}`,
+      hora: `${hora}:${minuto}`,
+      status: "concluido",
+      forma_pagamento:
+        agendamento.forma_pagamento === "em_aberto"
+          ? ""
+          : agendamento.forma_pagamento || "",
+      observacoes: agendamento.observacoes || "",
+    });
+    setIsDialogOpen(true);
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -447,18 +495,37 @@ export default function Agendamentos() {
   const renderMobileCards = (items: Agendamento[]) => (
     <div className="space-y-3 md:hidden">
       {items.map((agendamento) => (
-        <div key={agendamento.id} className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2">
+        <div
+          key={agendamento.id}
+          className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2"
+        >
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1 min-w-0">
-              <p className="font-medium text-foreground">{getClienteNome(agendamento.cliente_id)}</p>
-              <p className="text-sm text-muted-foreground">{getServicoNome(agendamento.servico_id)}</p>
-              <p className="text-sm text-muted-foreground">{getFuncionarioNome(agendamento.funcionario_id)}</p>
+              <p className="font-medium text-foreground">
+                {getClienteNome(agendamento.cliente_id)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {getServicoNome(agendamento.servico_id)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {getFuncionarioNome(agendamento.funcionario_id)}
+              </p>
             </div>
             <div className="flex gap-2 ml-2">
-              <Button variant="outline" size="sm" onClick={() => handleEdit(agendamento)} className="h-8 w-8 p-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(agendamento)}
+                className="h-8 w-8 p-0"
+              >
                 <Pencil className="w-4 h-4" />
               </Button>
-              <Button variant="destructive" size="sm" onClick={() => handleDelete(agendamento.id)} className="h-8 w-8 p-0">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDelete(agendamento.id)}
+                className="h-8 w-8 p-0"
+              >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
@@ -470,14 +537,34 @@ export default function Agendamentos() {
             </span>
             <span className="flex items-center gap-1 text-muted-foreground">
               <Clock className="w-3 h-3" />
-              {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
             {getStatusBadge(agendamento.status)}
-            <span className="text-muted-foreground">{getPaymentLabel(agendamento.forma_pagamento)}</span>
+            <span className="text-muted-foreground">
+              {getPaymentLabel(agendamento.forma_pagamento)}
+            </span>
           </div>
           {agendamento.observacoes && (
-            <p className="text-xs text-muted-foreground truncate">Obs: {agendamento.observacoes}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              Obs: {agendamento.observacoes}
+            </p>
           )}
+          {agendamento.status === "concluido" &&
+            (!agendamento.forma_pagamento ||
+              agendamento.forma_pagamento === "em_aberto") && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleQuitar(agendamento)}
+                className="w-full"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Quitar pagamento
+              </Button>
+            )}
         </div>
       ))}
     </div>
@@ -495,30 +582,75 @@ export default function Agendamentos() {
             <TableHead className="text-muted-foreground">Status</TableHead>
             <TableHead className="text-muted-foreground">Pagamento</TableHead>
             <TableHead className="text-muted-foreground">Observações</TableHead>
-            <TableHead className="text-muted-foreground text-right">Ações</TableHead>
+            <TableHead className="text-muted-foreground text-right">
+              Ações
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.map((agendamento) => (
-            <TableRow key={agendamento.id} className="border-border hover:bg-secondary/20 transition-smooth">
-              <TableCell className="font-medium text-foreground">{getClienteNome(agendamento.cliente_id)}</TableCell>
-              <TableCell className="text-foreground">{getServicoNome(agendamento.servico_id)}</TableCell>
-              <TableCell className="text-foreground">{getFuncionarioNome(agendamento.funcionario_id)}</TableCell>
+            <TableRow
+              key={agendamento.id}
+              className="border-border hover:bg-secondary/20 transition-smooth"
+            >
+              <TableCell className="font-medium text-foreground">
+                {getClienteNome(agendamento.cliente_id)}
+              </TableCell>
+              <TableCell className="text-foreground">
+                {getServicoNome(agendamento.servico_id)}
+              </TableCell>
+              <TableCell className="text-foreground">
+                {getFuncionarioNome(agendamento.funcionario_id)}
+              </TableCell>
               <TableCell className="text-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   {new Date(agendamento.data_hora).toLocaleDateString("pt-BR")}
                   <Clock className="w-4 h-4 text-muted-foreground ml-2" />
-                  {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </TableCell>
               <TableCell>{getStatusBadge(agendamento.status)}</TableCell>
-              <TableCell className="text-foreground">{getPaymentLabel(agendamento.forma_pagamento)}</TableCell>
-              <TableCell className="text-foreground max-w-32 truncate">{agendamento.observacoes || "-"}</TableCell>
+              <TableCell className="text-foreground">
+                {getPaymentLabel(agendamento.forma_pagamento)}
+              </TableCell>
+              <TableCell className="text-foreground max-w-32 truncate">
+                {agendamento.observacoes || "-"}
+              </TableCell>
               <TableCell className="text-right">
                 <div className="flex gap-2 justify-end">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(agendamento)} className="h-8 w-8 p-0"><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(agendamento.id)} className="h-8 w-8 p-0"><Trash2 className="w-4 h-4" /></Button>
+                  {agendamento.status === "concluido" &&
+                    (!agendamento.forma_pagamento ||
+                      agendamento.forma_pagamento === "em_aberto") && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleQuitar(agendamento)}
+                        className="h-8 w-8 p-0"
+                        title="Quitar pagamento"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(agendamento)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(agendamento.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -789,14 +921,21 @@ export default function Agendamentos() {
               </CardTitle>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Buscar agendamentos..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-full md:w-72 bg-input border-border" />
+                <Input
+                  placeholder="Buscar agendamentos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full md:w-72 bg-input border-border"
+                />
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <TabsContent value="pendentes" className="mt-0">
               {agendamentosPendentes.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nenhum agendamento pendente.</p>
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum agendamento pendente.
+                </p>
               ) : (
                 <>
                   {renderMobileCards(agendamentosPendentes)}
@@ -806,7 +945,9 @@ export default function Agendamentos() {
             </TabsContent>
             <TabsContent value="concluidos" className="mt-0">
               {agendamentosConcluidos.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nenhum agendamento concluído.</p>
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum agendamento concluído.
+                </p>
               ) : (
                 <>
                   {renderMobileCards(agendamentosConcluidos)}

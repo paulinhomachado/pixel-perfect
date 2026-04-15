@@ -18,6 +18,8 @@ interface RelatorioData {
   agendamentosCancelados: number;
   valorProfissionais: number;
   valorLiquido: number;
+  clientesEmAberto: number;
+  valorEmAberto: number;
   faturamentoPorDia: Array<{ data: string; valor: number }>;
   servicosPopulares: Array<{ nome: string; quantidade: number; valor: number }>;
   performanceProfissionais: Array<{ nome: string; servicos: number; comissao: number }>;
@@ -34,6 +36,26 @@ export default function Relatorios() {
   useEffect(() => {
     gerarRelatorio();
   }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("relatorios-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "agendamentos" },
+        () => gerarRelatorio(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transacoes_financeiras" },
+        () => gerarRelatorio(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [dataInicio, dataFim]);
 
   const gerarRelatorio = async () => {
     setLoading(true);
@@ -124,6 +146,15 @@ export default function Relatorios() {
       const valorProfissionais = transacoesEfetivas.reduce((sum, t: any) => sum + Number(t.valor_comissao), 0);
       const valorLiquido = faturamentoTotal - valorProfissionais;
 
+      const agendamentosEmAberto = agendamentosCompletos.filter(
+        (a: any) => !a.forma_pagamento || a.forma_pagamento === "em_aberto",
+      );
+      const clientesEmAberto = agendamentosEmAberto.length;
+      const valorEmAberto = agendamentosEmAberto.reduce(
+        (sum: number, a: any) => sum + Number(a.servicos?.preco || 0),
+        0,
+      );
+
       // Faturamento por dia
       const faturamentoPorDia = transacoesEfetivas.reduce((acc: any[], transacao: any) => {
         const data = format(parseISO(transacao.created_at), 'dd/MM', { locale: ptBR });
@@ -189,7 +220,7 @@ export default function Relatorios() {
 
       const formasPagamentoMap = new Map<string, number>();
       transacoesEfetivas.forEach((transacao: any) => {
-        const forma = transacao.forma_pagamento || 'nao_informado';
+        const forma = transacao.forma_pagamento || 'em_aberto';
         formasPagamentoMap.set(forma, (formasPagamentoMap.get(forma) || 0) + 1);
       });
 
@@ -199,6 +230,7 @@ export default function Relatorios() {
         cartao_credito: 'Cartão de Crédito',
         pix: 'Pix',
         pacote: 'Pacote',
+        em_aberto: 'Em aberto',
         nao_informado: 'Não informado',
       };
 
@@ -216,6 +248,8 @@ export default function Relatorios() {
         agendamentosCancelados: agendamentosCancelados.length,
         valorProfissionais,
         valorLiquido,
+        clientesEmAberto,
+        valorEmAberto,
         faturamentoPorDia,
         servicosPopulares,
         performanceProfissionais,
@@ -284,7 +318,7 @@ export default function Relatorios() {
       {relatorio && (
         <>
           {/* Cards de Métricas */}
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium">Faturamento Total</CardTitle>
@@ -328,6 +362,21 @@ export default function Relatorios() {
                 <div className="text-lg md:text-2xl font-bold text-green-600">
                   R$ {relatorio.valorLiquido.toFixed(2)}
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+                <CardTitle className="text-xs md:text-sm font-medium">Clientes em Aberto</CardTitle>
+                <CalendarDays className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              </CardHeader>
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-lg md:text-2xl font-bold text-amber-600">
+                  {relatorio.clientesEmAberto}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  R$ {relatorio.valorEmAberto.toFixed(2)} pendente
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -382,7 +431,9 @@ export default function Relatorios() {
           <Card>
             <CardHeader>
               <CardTitle>Formas de Pagamento Mais Utilizadas</CardTitle>
-              <CardDescription>Quantidade de agendamentos concluídos por forma de pagamento</CardDescription>
+              <CardDescription>
+                Quantidade de atendimentos por forma de pagamento (incluindo em aberto)
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>

@@ -86,6 +86,30 @@ export default function PainelCliente() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (!cliente?.id) return;
+
+    const channel = supabase
+      .channel(`cliente-agendamentos-${cliente.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "agendamentos",
+          filter: `cliente_id=eq.${cliente.id}`,
+        },
+        () => {
+          fetchAgendamentos(cliente.id);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cliente?.id]);
+
   const checkAuth = async () => {
     const {
       data: { session },

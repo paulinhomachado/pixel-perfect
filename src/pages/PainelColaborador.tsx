@@ -122,6 +122,30 @@ export default function PainelColaborador() {
     }
   }, [funcionario]);
 
+  useEffect(() => {
+    if (!funcionario?.id) return;
+
+    const channel = supabase
+      .channel(`colaborador-agendamentos-${funcionario.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "agendamentos",
+          filter: `funcionario_id=eq.${funcionario.id}`,
+        },
+        () => {
+          fetchDados();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [funcionario?.id]);
+
   const fetchDados = async () => {
     if (!funcionario) return;
 
