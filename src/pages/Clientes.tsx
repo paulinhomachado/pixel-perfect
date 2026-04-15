@@ -145,7 +145,7 @@ export default function Clientes() {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary hover:opacity-90 shadow-violet transition-smooth w-full md:w-auto">
+            <Button className="bg-[hsl(340,80%,55%)] hover:bg-[hsl(340,80%,45%)] text-white shadow-violet transition-smooth w-full md:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Novo Cliente
             </Button>
