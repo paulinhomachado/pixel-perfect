@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -73,7 +74,10 @@ export default function PainelCliente() {
     servico_id: "",
     funcionario_id: "",
     data_hora: "",
-    observacoes: "",
+    problema_saude: "",
+    acostumado_banho_tosa: "",
+    restricao_banho_tosa: "",
+    observacoes_adicionais: "",
   });
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("");
@@ -196,7 +200,13 @@ export default function PainelCliente() {
           servico_id: novoAgendamento.servico_id,
           funcionario_id: novoAgendamento.funcionario_id,
           data_hora: toLocalDateTimeString(dataHora),
-          observacoes: novoAgendamento.observacoes,
+          observacoes: [
+            "Questionário do animal:",
+            `- Problema de saúde: ${novoAgendamento.problema_saude || "Não informado"}`,
+            `- Acostumado a banho e tosa: ${novoAgendamento.acostumado_banho_tosa || "Não informado"}`,
+            `- Restrição com banho/tosa: ${novoAgendamento.restricao_banho_tosa || "Não informado"}`,
+            `- Observações adicionais: ${novoAgendamento.observacoes_adicionais || "Não informado"}`,
+          ].join("\n"),
           status: "agendado",
           funcionario:
             funcionarios.find((f) => f.id === novoAgendamento.funcionario_id)
@@ -215,7 +225,10 @@ export default function PainelCliente() {
         servico_id: "",
         funcionario_id: "",
         data_hora: "",
-        observacoes: "",
+        problema_saude: "",
+        acostumado_banho_tosa: "",
+        restricao_banho_tosa: "",
+        observacoes_adicionais: "",
       });
       setSelectedDate(undefined);
       setSelectedTime("");
@@ -427,18 +440,103 @@ export default function PainelCliente() {
                 />
 
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações (opcional)</Label>
-                  <Input
-                    id="observacoes"
-                    placeholder="Alguma preferência?"
-                    value={novoAgendamento.observacoes}
-                    onChange={(e) =>
-                      setNovoAgendamento({
-                        ...novoAgendamento,
-                        observacoes: e.target.value,
-                      })
-                    }
-                  />
+                  <Label>Observações (opcional)</Label>
+                  <div className="space-y-3 rounded-md border p-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="problema_saude">
+                        O animalzinho tem algum problema de saúde?
+                      </Label>
+                      <Select
+                        value={novoAgendamento.problema_saude}
+                        onValueChange={(value) =>
+                          setNovoAgendamento({
+                            ...novoAgendamento,
+                            problema_saude: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="problema_saude">
+                          <SelectValue placeholder="Selecione uma opção" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Sim">Sim</SelectItem>
+                          <SelectItem value="Não">Não</SelectItem>
+                          <SelectItem value="Não informado">
+                            Não informado
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="acostumado_banho_tosa">
+                        Já acostumado a banho e tosa?
+                      </Label>
+                      <Select
+                        value={novoAgendamento.acostumado_banho_tosa}
+                        onValueChange={(value) =>
+                          setNovoAgendamento({
+                            ...novoAgendamento,
+                            acostumado_banho_tosa: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="acostumado_banho_tosa">
+                          <SelectValue placeholder="Selecione uma opção" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Sim">Sim</SelectItem>
+                          <SelectItem value="Não">Não</SelectItem>
+                          <SelectItem value="Não informado">
+                            Não informado
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="restricao_banho_tosa">
+                        Teria alguma restrição com o banho ou a tosa?
+                      </Label>
+                      <Select
+                        value={novoAgendamento.restricao_banho_tosa}
+                        onValueChange={(value) =>
+                          setNovoAgendamento({
+                            ...novoAgendamento,
+                            restricao_banho_tosa: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="restricao_banho_tosa">
+                          <SelectValue placeholder="Selecione uma opção" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Sim">Sim</SelectItem>
+                          <SelectItem value="Não">Não</SelectItem>
+                          <SelectItem value="Não informado">
+                            Não informado
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="observacoes_adicionais">
+                        Algo a mais que você queira informar?
+                      </Label>
+                      <Textarea
+                        id="observacoes_adicionais"
+                        placeholder="Ex.: comportamento, alergias, cuidados especiais..."
+                        value={novoAgendamento.observacoes_adicionais}
+                        onChange={(e) =>
+                          setNovoAgendamento({
+                            ...novoAgendamento,
+                            observacoes_adicionais: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full">
