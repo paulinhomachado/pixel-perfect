@@ -99,7 +99,7 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {getMenuItems().map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-12 rounded-lg px-3">
+                  <SidebarMenuButton asChild className="h-12 rounded-lg px-3 text-white">
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {!isCollapsed && (
