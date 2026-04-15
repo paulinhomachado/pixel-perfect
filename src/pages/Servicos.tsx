@@ -145,7 +145,7 @@ export default function Servicos() {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary hover:opacity-90 shadow-violet transition-smooth w-full md:w-auto">
+            <Button className="bg-[hsl(340,80%,55%)] hover:bg-[hsl(340,80%,45%)] text-white shadow-violet transition-smooth w-full md:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Novo Serviço
             </Button>
@@ -170,7 +170,7 @@ export default function Servicos() {
                 <Input id="tempoMedio" type="number" min="1" value={formData.tempoMedio} onChange={(e) => setFormData((prev) => ({ ...prev, tempoMedio: e.target.value }))} className="bg-input border-border text-foreground" required />
               </div>
               <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">
+                <Button type="submit" className="flex-1 bg-[hsl(340,80%,55%)] hover:bg-[hsl(340,80%,45%)] text-white">
                   {editingServico ? "Atualizar" : "Cadastrar"}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm} className="flex-1">Cancelar</Button>
