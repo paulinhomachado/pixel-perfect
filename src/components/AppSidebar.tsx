@@ -66,7 +66,7 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? "bg-sidebar-accent/80 border border-primary/70 font-semibold shadow-violet"
-      : "bg-sidebar-accent/40 hover:bg-sidebar-accent/80 border border-transparent transition-smooth";
+      : "text-white bg-sidebar-accent/40 hover:bg-sidebar-accent/80 border border-transparent transition-smooth";
 
   return (
     <Sidebar className={isCollapsed ? "w-16" : "w-72"} collapsible="icon">
