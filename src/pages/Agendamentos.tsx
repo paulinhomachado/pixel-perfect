@@ -34,6 +34,7 @@ import { toast } from "sonner";
 type Cliente = {
   id: string;
   nome: string;
+  telefone: string;
 };
 
 type Servico = {
@@ -74,6 +75,30 @@ const getPaymentLabel = (value?: string | null) =>
 
 const formatLocalDateTime = (data: string, hora: string) =>
   `${data}T${hora}:00`;
+
+const normalizePhoneToWhatsApp = (telefone?: string | null) => {
+  if (!telefone) return null;
+
+  const numeros = telefone.replace(/\D/g, "");
+  if (!numeros) return null;
+
+  if (numeros.length === 11) {
+    return `55${numeros}`;
+  }
+
+  if (numeros.length === 10) {
+    return `55${numeros}`;
+  }
+
+  return numeros;
+};
+
+const buildMensagemFinalizacao = (clienteNome?: string) => {
+  const nomeCliente = clienteNome?.trim();
+  const saudacao = nomeCliente ? `Olá, ${nomeCliente}! ` : "Olá! ";
+  return `${saudacao}Seu animalzinho está limpo e cheiroso, pode vir buscá-lo.`;
+};
+
 const nextDayStart = (data: string) => {
   const d = new Date(`${data}T00:00:00`);
   d.setDate(d.getDate() + 1);
@@ -126,7 +151,7 @@ export default function Agendamentos() {
       // Buscar clientes para o select
       const { data: clientesData, error: clientesError } = await supabase
         .from("clientes")
-        .select("id, nome")
+        .select("id, nome, telefone")
         .order("nome");
 
       if (clientesError) throw clientesError;
@@ -165,6 +190,9 @@ export default function Agendamentos() {
     const cliente = clientes.find((c) => c.id === clienteId);
     return cliente?.nome || "Cliente não encontrado";
   };
+
+  const getClienteById = (clienteId: string) =>
+    clientes.find((c) => c.id === clienteId);
 
   const getServicoNome = (servicoId: string) => {
     const servico = servicos.find((s) => s.id === servicoId);
@@ -252,7 +280,14 @@ export default function Agendamentos() {
         }
       }
 
+      let enviarMensagemFinalizacao = false;
+      let clienteDaFinalizacao: Cliente | undefined;
+
       if (editingAgendamento) {
+        clienteDaFinalizacao = getClienteById(formData.clienteId);
+        enviarMensagemFinalizacao =
+          formData.status === "concluido" && editingAgendamento.status !== "concluido";
+
         // Editar agendamento existente
         const { error } = await supabase
           .from("agendamentos")
@@ -272,6 +307,9 @@ export default function Agendamentos() {
         if (error) throw error;
         toast.success("Agendamento atualizado com sucesso!");
       } else {
+        clienteDaFinalizacao = getClienteById(formData.clienteId);
+        enviarMensagemFinalizacao = formData.status === "concluido";
+
         // Adicionar novo agendamento
         const { error } = await supabase.from("agendamentos").insert([
           {
@@ -289,6 +327,23 @@ export default function Agendamentos() {
 
         if (error) throw error;
         toast.success("Agendamento criado com sucesso!");
+      }
+
+      if (enviarMensagemFinalizacao && clienteDaFinalizacao) {
+        const telefoneWhatsApp = normalizePhoneToWhatsApp(
+          clienteDaFinalizacao.telefone,
+        );
+
+        if (telefoneWhatsApp) {
+          const mensagem = buildMensagemFinalizacao(clienteDaFinalizacao.nome);
+          const whatsappUrl = `https://wa.me/${telefoneWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+          window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+          toast.success("Mensagem automática de retirada preparada no WhatsApp.");
+        } else {
+          toast.warning(
+            "Não foi possível preparar mensagem automática: telefone do cliente inválido.",
+          );
+        }
       }
 
       fetchData(); // Recarregar dados
