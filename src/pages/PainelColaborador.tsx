@@ -76,6 +76,30 @@ interface EstatisticasColaborador {
   ganhosMes: number;
 }
 
+const QUESTIONARIO_PREFIX = "Questionário do animal:";
+
+const parseQuestionarioAnimal = (observacoes?: string | null) => {
+  if (!observacoes || !observacoes.startsWith(QUESTIONARIO_PREFIX)) {
+    return null;
+  }
+
+  const linhas = observacoes
+    .split("\n")
+    .slice(1)
+    .map((linha) => linha.trim());
+
+  const getResposta = (prefixo: string) =>
+    linhas.find((linha) => linha.startsWith(prefixo))?.replace(prefixo, "").trim() ||
+    "Não informado";
+
+  return {
+    problemaSaude: getResposta("- Problema de saúde: "),
+    acostumadoBanhoTosa: getResposta("- Acostumado a banho e tosa: "),
+    restricaoBanhoTosa: getResposta("- Restrição com banho/tosa: "),
+    observacoesAdicionais: getResposta("- Observações adicionais: "),
+  };
+};
+
 export default function PainelColaborador() {
   const { user, funcionario } = useAuth();
   const navigate = useNavigate();
@@ -97,6 +121,30 @@ export default function PainelColaborador() {
       fetchDados();
     }
   }, [funcionario]);
+
+  useEffect(() => {
+    if (!funcionario?.id) return;
+
+    const channel = supabase
+      .channel(`colaborador-agendamentos-${funcionario.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "agendamentos",
+          filter: `funcionario_id=eq.${funcionario.id}`,
+        },
+        () => {
+          fetchDados();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [funcionario?.id]);
 
   const fetchDados = async () => {
     if (!funcionario) return;
@@ -407,9 +455,48 @@ export default function PainelColaborador() {
                           {getStatusBadge(agendamento.status)}
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">
-                            {agendamento.observacoes || "-"}
-                          </span>
+                          {(() => {
+                            const questionario = parseQuestionarioAnimal(
+                              agendamento.observacoes,
+                            );
+
+                            if (!questionario) {
+                              return (
+                                <span className="text-sm">
+                                  {agendamento.observacoes || "-"}
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <div className="space-y-1 text-sm">
+                                <p>
+                                  <span className="font-medium">
+                                    Problema de saúde:
+                                  </span>{" "}
+                                  {questionario.problemaSaude}
+                                </p>
+                                <p>
+                                  <span className="font-medium">
+                                    Acostumado a banho e tosa:
+                                  </span>{" "}
+                                  {questionario.acostumadoBanhoTosa}
+                                </p>
+                                <p>
+                                  <span className="font-medium">
+                                    Restrição com banho/tosa:
+                                  </span>{" "}
+                                  {questionario.restricaoBanhoTosa}
+                                </p>
+                                <p>
+                                  <span className="font-medium">
+                                    Algo a mais:
+                                  </span>{" "}
+                                  {questionario.observacoesAdicionais}
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     );
