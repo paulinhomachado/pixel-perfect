@@ -397,63 +397,60 @@ export default function Relatorios() {
             </CardContent>
           </Card>
 
-          {/* Tabelas */}
+          {/* Gráficos de Serviços e Profissionais */}
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Serviços Mais Populares</CardTitle>
+                <CardTitle className="text-base md:text-lg">Serviços Mais Populares</CardTitle>
                 <CardDescription>Ranking dos serviços mais realizados</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                <Table className="min-w-[420px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Serviço</TableHead>
-                      <TableHead>Quantidade</TableHead>
-                      <TableHead>Valor Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {relatorio.servicosPopulares.slice(0, 5).map((servico, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{servico.nome}</TableCell>
-                        <TableCell>{servico.quantidade}</TableCell>
-                        <TableCell>R$ {servico.valor.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </div>
+                <ResponsiveContainer width="100%" height={Math.max(200, relatorio.servicosPopulares.slice(0, 5).length * 50)}>
+                  <BarChart
+                    data={relatorio.servicosPopulares.slice(0, 5)}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis dataKey="nome" type="category" width={90} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number, name: string) => {
+                        if (name === 'quantidade') return [value, 'Quantidade'];
+                        return [`R$ ${Number(value).toFixed(2)}`, 'Valor Total'];
+                      }}
+                    />
+                    <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Performance dos Profissionais</CardTitle>
-                <CardDescription>Serviços realizados!</CardDescription>
+                <CardTitle className="text-base md:text-lg">Performance dos Profissionais</CardTitle>
+                <CardDescription>Serviços realizados e comissão</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                <Table className="min-w-[420px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Profissional</TableHead>
-                      <TableHead>Serviços</TableHead>
-                      <TableHead>Comissão</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {relatorio.performanceProfissionais.map((profissional, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{profissional.nome}</TableCell>
-                        <TableCell>{profissional.servicos}</TableCell>
-                        <TableCell>R$ {profissional.comissao.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </div>
+                <ResponsiveContainer width="100%" height={Math.max(200, relatorio.performanceProfissionais.length * 50)}>
+                  <BarChart
+                    data={relatorio.performanceProfissionais}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis dataKey="nome" type="category" width={90} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number, name: string) => {
+                        if (name === 'servicos') return [value, 'Serviços'];
+                        return [`R$ ${Number(value).toFixed(2)}`, 'Comissão'];
+                      }}
+                    />
+                    <Bar dataKey="servicos" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="comissao" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
