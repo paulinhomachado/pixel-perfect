@@ -64,9 +64,10 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive
-      ? "bg-sidebar-accent/80 text-primary border border-primary/70 font-semibold shadow-violet"
-      : "text-white bg-sidebar-accent/40 hover:text-primary hover:bg-sidebar-accent/80 border border-transparent transition-smooth";
+    `${isActive
+      ? "bg-sidebar-accent/80 border border-primary/70 font-semibold shadow-violet"
+      : "text-white bg-sidebar-accent/40 hover:bg-sidebar-accent/80 border border-transparent transition-smooth"
+    } text-white`;
 
   return (
     <Sidebar className={isCollapsed ? "w-16" : "w-72"} collapsible="icon">
@@ -98,7 +99,7 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {getMenuItems().map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-12 rounded-lg px-3">
+                  <SidebarMenuButton asChild className="h-12 rounded-lg px-3 text-white">
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {!isCollapsed && (
