@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
   Pencil,
@@ -124,7 +125,6 @@ export default function Agendamentos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] =
     useState<Agendamento | null>(null);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     clienteId: "",
     servicoId: "",
@@ -207,8 +207,6 @@ export default function Agendamentos() {
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast.error("Erro ao carregar dados");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -245,6 +243,13 @@ export default function Agendamentos() {
       funcionarioNome.includes(searchLower)
     );
   });
+
+  const agendamentosPendentes = filteredAgendamentos.filter(
+    (a) => a.status !== "concluido",
+  );
+  const agendamentosConcluidos = filteredAgendamentos.filter(
+    (a) => a.status === "concluido",
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -487,6 +492,174 @@ export default function Agendamentos() {
     }
   };
 
+  const renderMobileCards = (items: Agendamento[]) => (
+    <div className="space-y-3 md:hidden">
+      {items.map((agendamento) => (
+        <div
+          key={agendamento.id}
+          className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-1 flex-1 min-w-0">
+              <p className="font-medium text-foreground">
+                {getClienteNome(agendamento.cliente_id)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {getServicoNome(agendamento.servico_id)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {getFuncionarioNome(agendamento.funcionario_id)}
+              </p>
+            </div>
+            <div className="flex gap-2 ml-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(agendamento)}
+                className="h-8 w-8 p-0"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDelete(agendamento.id)}
+                className="h-8 w-8 p-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Calendar className="w-3 h-3" />
+              {new Date(agendamento.data_hora).toLocaleDateString("pt-BR")}
+            </span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+            {getStatusBadge(agendamento.status)}
+            <span className="text-muted-foreground">
+              {getPaymentLabel(agendamento.forma_pagamento)}
+            </span>
+          </div>
+          {agendamento.observacoes && (
+            <p className="text-xs text-muted-foreground truncate">
+              Obs: {agendamento.observacoes}
+            </p>
+          )}
+          {agendamento.status === "concluido" &&
+            (!agendamento.forma_pagamento ||
+              agendamento.forma_pagamento === "em_aberto") && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleQuitar(agendamento)}
+                className="w-full"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Quitar pagamento
+              </Button>
+            )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderDesktopTable = (items: Agendamento[]) => (
+    <div className="hidden md:block overflow-x-auto">
+      <Table className="min-w-[900px]">
+        <TableHeader>
+          <TableRow className="border-border">
+            <TableHead className="text-muted-foreground">Cliente</TableHead>
+            <TableHead className="text-muted-foreground">Serviço</TableHead>
+            <TableHead className="text-muted-foreground">Funcionário</TableHead>
+            <TableHead className="text-muted-foreground">Data/Hora</TableHead>
+            <TableHead className="text-muted-foreground">Status</TableHead>
+            <TableHead className="text-muted-foreground">Pagamento</TableHead>
+            <TableHead className="text-muted-foreground">Observações</TableHead>
+            <TableHead className="text-muted-foreground text-right">
+              Ações
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((agendamento) => (
+            <TableRow
+              key={agendamento.id}
+              className="border-border hover:bg-secondary/20 transition-smooth"
+            >
+              <TableCell className="font-medium text-foreground">
+                {getClienteNome(agendamento.cliente_id)}
+              </TableCell>
+              <TableCell className="text-foreground">
+                {getServicoNome(agendamento.servico_id)}
+              </TableCell>
+              <TableCell className="text-foreground">
+                {getFuncionarioNome(agendamento.funcionario_id)}
+              </TableCell>
+              <TableCell className="text-foreground">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  {new Date(agendamento.data_hora).toLocaleDateString("pt-BR")}
+                  <Clock className="w-4 h-4 text-muted-foreground ml-2" />
+                  {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </TableCell>
+              <TableCell>{getStatusBadge(agendamento.status)}</TableCell>
+              <TableCell className="text-foreground">
+                {getPaymentLabel(agendamento.forma_pagamento)}
+              </TableCell>
+              <TableCell className="text-foreground max-w-32 truncate">
+                {agendamento.observacoes || "-"}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex gap-2 justify-end">
+                  {agendamento.status === "concluido" &&
+                    (!agendamento.forma_pagamento ||
+                      agendamento.forma_pagamento === "em_aberto") && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleQuitar(agendamento)}
+                        className="h-8 w-8 p-0"
+                        title="Quitar pagamento"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(agendamento)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(agendamento.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -727,131 +900,64 @@ export default function Agendamentos() {
         </Dialog>
       </div>
 
-      <Card className="gradient-card border-border shadow-elevated">
-        <CardHeader className="pb-3 md:pb-6">
-          <div className="flex flex-col gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
-            <CardTitle className="text-foreground flex items-center gap-2 text-base md:text-lg">
-              <Calendar className="w-5 h-5 text-primary" />
-              Lista de Agendamentos
-            </CardTitle>
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar agendamentos..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-full md:w-72 bg-input border-border" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Mobile card view */}
-          <div className="space-y-3 md:hidden">
-            {filteredAgendamentos.map((agendamento) => (
-              <div key={agendamento.id} className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <p className="font-medium text-foreground">{getClienteNome(agendamento.cliente_id)}</p>
-                    <p className="text-sm text-muted-foreground">{getServicoNome(agendamento.servico_id)}</p>
-                    <p className="text-sm text-muted-foreground">{getFuncionarioNome(agendamento.funcionario_id)}</p>
-                  </div>
-                  <div className="flex gap-2 ml-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(agendamento)} className="h-8 w-8 p-0">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(agendamento.id)} className="h-8 w-8 p-0">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(agendamento.data_hora).toLocaleDateString("pt-BR")}
-                  </span>
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  {getStatusBadge(agendamento.status)}
-                  <span className="text-muted-foreground">
-                    {getPaymentLabel(agendamento.forma_pagamento)}
-                  </span>
-                </div>
-                {agendamento.observacoes && (
-                  <p className="text-xs text-muted-foreground truncate">Obs: {agendamento.observacoes}</p>
-                )}
-                {agendamento.status === "concluido" &&
-                  (!agendamento.forma_pagamento ||
-                    agendamento.forma_pagamento === "em_aberto") && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleQuitar(agendamento)}
-                      className="w-full"
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Quitar pagamento
-                    </Button>
-                  )}
-              </div>
-            ))}
-          </div>
+      <Tabs defaultValue="pendentes" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="pendentes" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Agendados ({agendamentosPendentes.length})
+          </TabsTrigger>
+          <TabsTrigger value="concluidos" className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Concluídos ({agendamentosConcluidos.length})
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Desktop table view */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table className="min-w-[900px]">
-              <TableHeader>
-                <TableRow className="border-border">
-                  <TableHead className="text-muted-foreground">Cliente</TableHead>
-                  <TableHead className="text-muted-foreground">Serviço</TableHead>
-                  <TableHead className="text-muted-foreground">Funcionário</TableHead>
-                  <TableHead className="text-muted-foreground">Data/Hora</TableHead>
-                  <TableHead className="text-muted-foreground">Status</TableHead>
-                  <TableHead className="text-muted-foreground">Pagamento</TableHead>
-                  <TableHead className="text-muted-foreground">Observações</TableHead>
-                  <TableHead className="text-muted-foreground text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAgendamentos.map((agendamento) => (
-                  <TableRow key={agendamento.id} className="border-border hover:bg-secondary/20 transition-smooth">
-                    <TableCell className="font-medium text-foreground">{getClienteNome(agendamento.cliente_id)}</TableCell>
-                    <TableCell className="text-foreground">{getServicoNome(agendamento.servico_id)}</TableCell>
-                    <TableCell className="text-foreground">{getFuncionarioNome(agendamento.funcionario_id)}</TableCell>
-                    <TableCell className="text-foreground">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        {new Date(agendamento.data_hora).toLocaleDateString("pt-BR")}
-                        <Clock className="w-4 h-4 text-muted-foreground ml-2" />
-                        {new Date(agendamento.data_hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(agendamento.status)}</TableCell>
-                    <TableCell className="text-foreground">{getPaymentLabel(agendamento.forma_pagamento)}</TableCell>
-                    <TableCell className="text-foreground max-w-32 truncate">{agendamento.observacoes || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
-                        {agendamento.status === "concluido" &&
-                          (!agendamento.forma_pagamento ||
-                            agendamento.forma_pagamento === "em_aberto") && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleQuitar(agendamento)}
-                              className="h-8 w-8 p-0"
-                              title="Quitar pagamento"
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(agendamento)} className="h-8 w-8 p-0"><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(agendamento.id)} className="h-8 w-8 p-0"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="gradient-card border-border shadow-elevated">
+          <CardHeader className="pb-3 md:pb-6">
+            <div className="flex flex-col gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-foreground flex items-center gap-2 text-base md:text-lg">
+                <Calendar className="w-5 h-5 text-primary" />
+                Lista de Agendamentos
+              </CardTitle>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar agendamentos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full md:w-72 bg-input border-border"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <TabsContent value="pendentes" className="mt-0">
+              {agendamentosPendentes.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum agendamento pendente.
+                </p>
+              ) : (
+                <>
+                  {renderMobileCards(agendamentosPendentes)}
+                  {renderDesktopTable(agendamentosPendentes)}
+                </>
+              )}
+            </TabsContent>
+            <TabsContent value="concluidos" className="mt-0">
+              {agendamentosConcluidos.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum agendamento concluído.
+                </p>
+              ) : (
+                <>
+                  {renderMobileCards(agendamentosConcluidos)}
+                  {renderDesktopTable(agendamentosConcluidos)}
+                </>
+              )}
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </Tabs>
     </div>
   );
 }
