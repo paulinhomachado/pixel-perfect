@@ -221,6 +221,13 @@ export default function Agendamentos() {
     );
   });
 
+  const agendamentosPendentes = filteredAgendamentos.filter(
+    (a) => a.status !== "concluido"
+  );
+  const agendamentosConcluidos = filteredAgendamentos.filter(
+    (a) => a.status === "concluido"
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
