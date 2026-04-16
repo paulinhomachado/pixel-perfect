@@ -67,7 +67,7 @@ export default function Funcionarios() {
     telefone: "",
     email: "",
     senha: "",
-    cargo: "barbeiro",
+    cargo: "tosadora",
     nivel_acesso: "funcionario",
     tipo_comissao: "percentual",
     valor_comissao: 0,
@@ -294,7 +294,7 @@ export default function Funcionarios() {
       telefone: "",
       email: "",
       senha: "",
-      cargo: "barbeiro",
+      cargo: "tosadora",
       nivel_acesso: "funcionario",
       tipo_comissao: "percentual",
       valor_comissao: 0,
@@ -305,7 +305,7 @@ export default function Funcionarios() {
 
   const getCargoLabel = (cargo: string) => {
     const labels = {
-      barbeiro: "Barbeiro",
+      tosadora: "Tosadora",
       recepcao: "Recepção",
       auxiliar: "Auxiliar",
     };
@@ -421,7 +421,7 @@ export default function Funcionarios() {
                       <SelectValue placeholder="Selecione o cargo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="barbeiro">Barbeiro</SelectItem>
+                      <SelectItem value="barbeiro">Tosadora</SelectItem>
                       <SelectItem value="recepcao">Recepção</SelectItem>
                       <SelectItem value="auxiliar">Auxiliar</SelectItem>
                     </SelectContent>
