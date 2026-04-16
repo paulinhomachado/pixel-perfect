@@ -448,7 +448,7 @@ export default function Relatorios() {
             </CardContent>
           </Card>
 
-          {/* Gráficos de Serviços e Profissionais */}
+          {/* Serviços e Profissionais em números */}
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -456,24 +456,26 @@ export default function Relatorios() {
                 <CardDescription>Ranking dos serviços mais realizados</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={Math.max(200, relatorio.servicosPopulares.slice(0, 5).length * 50)}>
-                  <BarChart
-                    data={relatorio.servicosPopulares.slice(0, 5)}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" allowDecimals={false} />
-                    <YAxis dataKey="nome" type="category" width={90} tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      formatter={(value: number, name: string) => {
-                        if (name === 'quantidade') return [value, 'Quantidade'];
-                        return [`R$ ${Number(value).toFixed(2)}`, 'Valor Total'];
-                      }}
-                    />
-                    <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {relatorio.servicosPopulares.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum serviço no período.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {relatorio.servicosPopulares.slice(0, 5).map((servico, index) => (
+                      <div key={servico.nome} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                            {index + 1}º
+                          </span>
+                          <div>
+                            <p className="text-sm font-medium leading-tight">{servico.nome}</p>
+                            <p className="text-xs text-muted-foreground">{servico.quantidade} atendimento{servico.quantidade !== 1 ? 's' : ''}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold whitespace-nowrap">R$ {Number(servico.valor).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -483,25 +485,26 @@ export default function Relatorios() {
                 <CardDescription>Serviços realizados e comissão</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={Math.max(200, relatorio.performanceProfissionais.length * 50)}>
-                  <BarChart
-                    data={relatorio.performanceProfissionais}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" allowDecimals={false} />
-                    <YAxis dataKey="nome" type="category" width={90} tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      formatter={(value: number, name: string) => {
-                        if (name === 'servicos') return [value, 'Serviços'];
-                        return [`R$ ${Number(value).toFixed(2)}`, 'Comissão'];
-                      }}
-                    />
-                    <Bar dataKey="servicos" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="comissao" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {relatorio.performanceProfissionais.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum profissional no período.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {relatorio.performanceProfissionais.map((prof, index) => (
+                      <div key={prof.nome} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-sm font-bold text-accent-foreground">
+                            {index + 1}º
+                          </span>
+                          <div>
+                            <p className="text-sm font-medium leading-tight">{prof.nome}</p>
+                            <p className="text-xs text-muted-foreground">{prof.servicos} serviço{prof.servicos !== 1 ? 's' : ''}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold whitespace-nowrap">R$ {Number(prof.comissao).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
