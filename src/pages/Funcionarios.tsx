@@ -549,7 +549,7 @@ export default function Funcionarios() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Comissão: {comissao ? (comissao.tipo_comissao === "percentual" ? `${comissao.valor}%` : `R$ ${comissao.valor.toFixed(2)}`) : "Não configurada"}
+                      Comissão: {comissao ? (comissao.tipo_comissao === "percentual" ? `${comissao.valor}%` : `R$ ${Number(comissao.valor).toFixed(2)}`) : "Não configurada"}
                     </span>
                     <div className="flex items-center space-x-2">
                       <Switch checked={funcionario.ativo} onCheckedChange={() => handleToggleAtivo(funcionario)} />
@@ -586,7 +586,7 @@ export default function Funcionarios() {
                       <TableCell>{funcionario.email}</TableCell>
                       <TableCell><Badge variant="outline">{getCargoLabel(funcionario.cargo)}</Badge></TableCell>
                       <TableCell><Badge variant={funcionario.nivel_acesso === "administrador" ? "default" : "secondary"}>{getNivelLabel(funcionario.nivel_acesso)}</Badge></TableCell>
-                      <TableCell>{comissao ? (comissao.tipo_comissao === "percentual" ? `${comissao.valor}%` : `R$ ${comissao.valor.toFixed(2)}`) : <span className="text-muted-foreground">Não configurada</span>}</TableCell>
+                      <TableCell>{comissao ? (comissao.tipo_comissao === "percentual" ? `${comissao.valor}%` : `R$ ${Number(comissao.valor).toFixed(2)}`) : <span className="text-muted-foreground">Não configurada</span>}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <Switch checked={funcionario.ativo} onCheckedChange={() => handleToggleAtivo(funcionario)} />
