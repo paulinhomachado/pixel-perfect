@@ -421,7 +421,7 @@ export default function Funcionarios() {
                       <SelectValue placeholder="Selecione o cargo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="barbeiro">Tosadora</SelectItem>
+                      <SelectItem value="tosadora">Tosadora</SelectItem>
                       <SelectItem value="recepcao">Recepção</SelectItem>
                       <SelectItem value="auxiliar">Auxiliar</SelectItem>
                     </SelectContent>
