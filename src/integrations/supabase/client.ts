@@ -290,9 +290,9 @@ export const supabase = {
     },
   },
 
-  channel() {
+  channel(_name?: string) {
     return {
-      on() {
+      on(..._args: any[]) {
         return this;
       },
       subscribe() {
@@ -301,7 +301,7 @@ export const supabase = {
     };
   },
 
-  removeChannel() {
+  removeChannel(_channel?: any) {
     return true;
   },
 };
