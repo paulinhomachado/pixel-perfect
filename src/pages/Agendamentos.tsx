@@ -255,8 +255,10 @@ export default function Agendamentos() {
     e.preventDefault();
 
     try {
-      if (formData.status === "concluido" && !formData.forma_pagamento) {
-        toast.error("Selecione a forma de pagamento para status concluído.");
+      const requerPagamento =
+        formData.status === "concluido" || formData.status === "quitado";
+      if (requerPagamento && !formData.forma_pagamento) {
+        toast.error("Selecione a forma de pagamento.");
         return;
       }
 
@@ -329,8 +331,7 @@ export default function Agendamentos() {
             funcionario: getFuncionarioNome(formData.funcionarioId),
             data_hora: dataHora,
             status: formData.status,
-            forma_pagamento:
-              formData.status === "concluido" ? formData.forma_pagamento : null,
+            forma_pagamento: requerPagamento ? formData.forma_pagamento : null,
             observacoes: formData.observacoes || null,
           })
           .eq("id", editingAgendamento.id);
@@ -350,8 +351,7 @@ export default function Agendamentos() {
             funcionario: getFuncionarioNome(formData.funcionarioId),
             data_hora: dataHora,
             status: formData.status,
-            forma_pagamento:
-              formData.status === "concluido" ? formData.forma_pagamento : null,
+            forma_pagamento: requerPagamento ? formData.forma_pagamento : null,
             observacoes: formData.observacoes || null,
           },
         ]);
@@ -423,7 +423,7 @@ export default function Agendamentos() {
       funcionarioId: agendamento.funcionario_id || "",
       data: `${ano}-${mes}-${dia}`,
       hora: `${hora}:${minuto}`,
-      status: "concluido",
+      status: "quitado",
       forma_pagamento:
         agendamento.forma_pagamento === "em_aberto"
           ? ""
@@ -479,6 +479,12 @@ export default function Agendamentos() {
         return (
           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
             Concluído
+          </Badge>
+        );
+      case "quitado":
+        return (
+          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+            Quitado
           </Badge>
         );
       case "cancelado":
@@ -741,7 +747,7 @@ export default function Agendamentos() {
                 </div>
               </div>
 
-              {formData.status === "concluido" && (
+              {(formData.status === "concluido" || formData.status === "quitado") && (
                 <div>
                   <Label htmlFor="forma_pagamento" className="text-foreground">
                     Forma de Pagamento
@@ -819,6 +825,9 @@ export default function Agendamentos() {
                       </SelectItem>
                       <SelectItem value="concluido" className="text-foreground">
                         Concluído
+                      </SelectItem>
+                      <SelectItem value="quitado" className="text-foreground">
+                        Quitado
                       </SelectItem>
                       <SelectItem value="cancelado" className="text-foreground">
                         Cancelado
