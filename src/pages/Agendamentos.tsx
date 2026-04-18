@@ -248,7 +248,10 @@ export default function Agendamentos() {
     (a) => a.status !== "concluido" && a.status !== "quitado",
   );
   const agendamentosConcluidos = filteredAgendamentos.filter(
-    (a) => a.status === "concluido" || a.status === "quitado",
+    (a) => a.status === "concluido",
+  );
+  const agendamentosQuitados = filteredAgendamentos.filter(
+    (a) => a.status === "quitado",
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -910,7 +913,7 @@ export default function Agendamentos() {
       </div>
 
       <Tabs defaultValue="pendentes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="pendentes" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Agendados ({agendamentosPendentes.length})
@@ -918,6 +921,10 @@ export default function Agendamentos() {
           <TabsTrigger value="concluidos" className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
             Concluídos ({agendamentosConcluidos.length})
+          </TabsTrigger>
+          <TabsTrigger value="quitados" className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Quitados ({agendamentosQuitados.length})
           </TabsTrigger>
         </TabsList>
 
@@ -961,6 +968,18 @@ export default function Agendamentos() {
                 <>
                   {renderMobileCards(agendamentosConcluidos)}
                   {renderDesktopTable(agendamentosConcluidos)}
+                </>
+              )}
+            </TabsContent>
+            <TabsContent value="quitados" className="mt-0">
+              {agendamentosQuitados.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum agendamento quitado.
+                </p>
+              ) : (
+                <>
+                  {renderMobileCards(agendamentosQuitados)}
+                  {renderDesktopTable(agendamentosQuitados)}
                 </>
               )}
             </TabsContent>
