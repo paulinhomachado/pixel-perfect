@@ -258,6 +258,19 @@ export default function Agendamentos() {
     e.preventDefault();
 
     try {
+      if (!formData.clienteId) {
+        toast.error("Selecione um cliente.");
+        return;
+      }
+      if (!formData.servicoId) {
+        toast.error("Selecione um serviço.");
+        return;
+      }
+      if (!formData.funcionarioId) {
+        toast.error("Selecione um funcionário.");
+        return;
+      }
+
       const requerPagamento =
         formData.status === "concluido" || formData.status === "quitado";
       if (requerPagamento && !formData.forma_pagamento) {
