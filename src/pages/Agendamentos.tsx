@@ -248,7 +248,10 @@ export default function Agendamentos() {
     (a) => a.status !== "concluido" && a.status !== "quitado",
   );
   const agendamentosConcluidos = filteredAgendamentos.filter(
-    (a) => a.status === "concluido" || a.status === "quitado",
+    (a) => a.status === "concluido",
+  );
+  const agendamentosQuitados = filteredAgendamentos.filter(
+    (a) => a.status === "quitado",
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
