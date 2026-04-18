@@ -443,7 +443,7 @@ export default function Agendamentos() {
       funcionarioId: agendamento.funcionario_id || "",
       data: `${ano}-${mes}-${dia}`,
       hora: `${hora}:${minuto}`,
-      status: "quitado",
+      status: "concluido",
       forma_pagamento:
         agendamento.forma_pagamento === "em_aberto"
           ? ""
