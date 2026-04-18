@@ -456,29 +456,64 @@ export default function Agendamentos() {
     setIsDialogOpen(true);
   };
 
-  const handleQuitar = (agendamento: Agendamento) => {
-    setEditingAgendamento(agendamento);
-    const dataHoraUTC = new Date(agendamento.data_hora);
-    const ano = dataHoraUTC.getFullYear();
-    const mes = String(dataHoraUTC.getMonth() + 1).padStart(2, "0");
-    const dia = String(dataHoraUTC.getDate()).padStart(2, "0");
-    const hora = String(dataHoraUTC.getHours()).padStart(2, "0");
-    const minuto = String(dataHoraUTC.getMinutes()).padStart(2, "0");
+  const [formaPagamentoQuitar, setFormaPagamentoQuitar] = useState("");
 
-    setFormData({
-      clienteId: agendamento.cliente_id,
-      servicoId: agendamento.servico_id,
-      funcionarioId: agendamento.funcionario_id || "",
-      data: `${ano}-${mes}-${dia}`,
-      hora: `${hora}:${minuto}`,
-      status: "concluido",
-      forma_pagamento:
-        agendamento.forma_pagamento === "em_aberto"
-          ? ""
-          : agendamento.forma_pagamento || "",
-      observacoes: agendamento.observacoes || "",
-    });
-    setIsDialogOpen(true);
+  const handleQuitar = (agendamento: Agendamento) => {
+    setQuitandoAgendamento(agendamento);
+    setFormaPagamentoQuitar(
+      agendamento.forma_pagamento && agendamento.forma_pagamento !== "em_aberto"
+        ? agendamento.forma_pagamento
+        : "",
+    );
+  };
+
+  const confirmarQuitacao = async () => {
+    if (!quitandoAgendamento) return;
+    if (!formaPagamentoQuitar) {
+      toast.error("Selecione a forma de pagamento.");
+      return;
+    }
+
+    try {
+      const servico = servicos.find(
+        (s) => s.id === quitandoAgendamento.servico_id,
+      );
+      const valorServico = Number(servico?.preco || 0);
+
+      const { error: insertError } = await supabase
+        .from("servicos_quitados" as any)
+        .insert([
+          {
+            agendamento_id: quitandoAgendamento.id,
+            cliente_id: quitandoAgendamento.cliente_id,
+            servico_id: quitandoAgendamento.servico_id,
+            funcionario_id: quitandoAgendamento.funcionario_id,
+            funcionario: quitandoAgendamento.funcionario,
+            data_hora: quitandoAgendamento.data_hora,
+            valor_servico: valorServico,
+            forma_pagamento: formaPagamentoQuitar,
+            observacoes: quitandoAgendamento.observacoes,
+          },
+        ]);
+
+      if (insertError) throw insertError;
+
+      // Remover o agendamento original (vai para a aba Quitados via nova tabela)
+      const { error: deleteError } = await supabase
+        .from("agendamentos")
+        .delete()
+        .eq("id", quitandoAgendamento.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success("Serviço quitado com sucesso!");
+      setQuitandoAgendamento(null);
+      setFormaPagamentoQuitar("");
+      fetchData();
+    } catch (error: any) {
+      console.error("Erro ao quitar serviço:", error);
+      toast.error(error?.message || "Erro ao quitar serviço");
+    }
   };
 
   const handleDelete = async (id: string) => {
