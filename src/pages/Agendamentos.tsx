@@ -272,19 +272,24 @@ export default function Agendamentos() {
     );
   });
 
-  const isQuitado = (a: Agendamento) =>
-    a.status === "quitado" ||
-    (a.status === "concluido" &&
-      !!a.forma_pagamento &&
-      a.forma_pagamento !== "em_aberto");
-
   const agendamentosPendentes = filteredAgendamentos.filter(
-    (a) => a.status !== "concluido" && a.status !== "quitado",
+    (a) => a.status !== "concluido",
   );
   const agendamentosConcluidos = filteredAgendamentos.filter(
-    (a) => a.status === "concluido" && !isQuitado(a),
+    (a) => a.status === "concluido",
   );
-  const agendamentosQuitados = filteredAgendamentos.filter((a) => isQuitado(a));
+
+  const filteredQuitados = quitados.filter((q) => {
+    const clienteNome = getClienteNome(q.cliente_id).toLowerCase();
+    const servicoNome = getServicoNome(q.servico_id).toLowerCase();
+    const funcionarioNome = getFuncionarioNome(q.funcionario_id).toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      clienteNome.includes(searchLower) ||
+      servicoNome.includes(searchLower) ||
+      funcionarioNome.includes(searchLower)
+    );
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
