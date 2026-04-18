@@ -96,7 +96,7 @@ export default function Relatorios() {
       if (comissoesError) throw comissoesError;
 
       // Calcular métricas
-      const agendamentosCompletos = agendamentos?.filter(a => a.status === 'concluido') || [];
+      const agendamentosCompletos = agendamentos?.filter(a => a.status === 'concluido' || a.status === 'quitado') || [];
       const agendamentosCancelados = agendamentos?.filter(a => a.status === 'cancelado') || [];
       
       const comissaoMap = new Map<string, { tipo_comissao: string; valor: number; created_at: string }>();
@@ -147,7 +147,9 @@ export default function Relatorios() {
       const valorLiquido = faturamentoTotal - valorProfissionais;
 
       const agendamentosEmAberto = agendamentosCompletos.filter(
-        (a: any) => !a.forma_pagamento || a.forma_pagamento === "em_aberto",
+        (a: any) =>
+          a.status !== "quitado" &&
+          (!a.forma_pagamento || a.forma_pagamento === "em_aberto"),
       );
       const clientesEmAberto = agendamentosEmAberto.length;
       const valorEmAberto = agendamentosEmAberto.reduce(
