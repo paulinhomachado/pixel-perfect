@@ -140,6 +140,8 @@ export default function Agendamentos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] =
     useState<Agendamento | null>(null);
+  const [quitandoAgendamento, setQuitandoAgendamento] =
+    useState<Agendamento | null>(null);
   const [formData, setFormData] = useState({
     clienteId: "",
     servicoId: "",
