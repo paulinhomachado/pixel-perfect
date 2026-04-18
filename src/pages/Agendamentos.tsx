@@ -1155,6 +1155,90 @@ export default function Agendamentos() {
           </CardContent>
         </Card>
       </Tabs>
+
+      {/* Dialog de quitação */}
+      <Dialog
+        open={!!quitandoAgendamento}
+        onOpenChange={(open) => {
+          if (!open) {
+            setQuitandoAgendamento(null);
+            setFormaPagamentoQuitar("");
+          }
+        }}
+      >
+        <DialogContent className="gradient-card border-border w-[95vw] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">
+              Quitar serviço
+            </DialogTitle>
+          </DialogHeader>
+          {quitandoAgendamento && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>
+                  <span className="text-foreground font-medium">Cliente:</span>{" "}
+                  {getClienteNome(quitandoAgendamento.cliente_id)}
+                </p>
+                <p>
+                  <span className="text-foreground font-medium">Serviço:</span>{" "}
+                  {getServicoNome(quitandoAgendamento.servico_id)}
+                </p>
+                <p>
+                  <span className="text-foreground font-medium">Valor:</span> R${" "}
+                  {Number(
+                    servicos.find(
+                      (s) => s.id === quitandoAgendamento.servico_id,
+                    )?.preco || 0,
+                  ).toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <Label className="text-foreground">Forma de pagamento</Label>
+                <Select
+                  value={formaPagamentoQuitar}
+                  onValueChange={setFormaPagamentoQuitar}
+                >
+                  <SelectTrigger className="bg-input border-border text-foreground">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {PAYMENT_OPTIONS.filter(
+                      (o) => o.value !== "em_aberto",
+                    ).map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-foreground"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={confirmarQuitacao}
+                  className="flex-1 bg-[hsl(340,80%,55%)] hover:bg-[hsl(340,80%,45%)] text-white"
+                >
+                  Confirmar quitação
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setQuitandoAgendamento(null);
+                    setFormaPagamentoQuitar("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
