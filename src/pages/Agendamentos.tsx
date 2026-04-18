@@ -71,6 +71,20 @@ type Agendamento = {
   observacoes: string | null;
 };
 
+type ServicoQuitado = {
+  id: string;
+  agendamento_id: string;
+  cliente_id: string;
+  servico_id: string;
+  funcionario_id: string | null;
+  funcionario: string;
+  data_hora: string;
+  valor_servico: number;
+  forma_pagamento: string;
+  observacoes: string | null;
+  data_quitacao: string;
+};
+
 const PAYMENT_OPTIONS = [
   { value: "em_aberto", label: "Em aberto" },
   { value: "dinheiro", label: "Dinheiro" },
@@ -118,12 +132,15 @@ const nextDayStart = (data: string) => {
 
 export default function Agendamentos() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [quitados, setQuitados] = useState<ServicoQuitado[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] =
+    useState<Agendamento | null>(null);
+  const [quitandoAgendamento, setQuitandoAgendamento] =
     useState<Agendamento | null>(null);
   const [formData, setFormData] = useState({
     clienteId: "",
@@ -200,10 +217,21 @@ export default function Agendamentos() {
 
       if (funcionariosError) throw funcionariosError;
 
+      // Buscar serviços quitados
+      const { data: quitadosData, error: quitadosError } = await supabase
+        .from("servicos_quitados" as any)
+        .select("*")
+        .order("data_quitacao", { ascending: false });
+
+      if (quitadosError) {
+        console.warn("Não foi possível carregar serviços quitados:", quitadosError);
+      }
+
       setAgendamentos(agendamentosData || []);
       setClientes(clientesData || []);
       setServicos(servicosData || []);
       setFuncionarios(funcionariosData || []);
+      setQuitados((quitadosData as any) || []);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast.error("Erro ao carregar dados");
@@ -244,19 +272,24 @@ export default function Agendamentos() {
     );
   });
 
-  const isQuitado = (a: Agendamento) =>
-    a.status === "quitado" ||
-    (a.status === "concluido" &&
-      !!a.forma_pagamento &&
-      a.forma_pagamento !== "em_aberto");
-
   const agendamentosPendentes = filteredAgendamentos.filter(
-    (a) => a.status !== "concluido" && a.status !== "quitado",
+    (a) => a.status !== "concluido",
   );
   const agendamentosConcluidos = filteredAgendamentos.filter(
-    (a) => a.status === "concluido" && !isQuitado(a),
+    (a) => a.status === "concluido",
   );
-  const agendamentosQuitados = filteredAgendamentos.filter((a) => isQuitado(a));
+
+  const filteredQuitados = quitados.filter((q) => {
+    const clienteNome = getClienteNome(q.cliente_id).toLowerCase();
+    const servicoNome = getServicoNome(q.servico_id).toLowerCase();
+    const funcionarioNome = getFuncionarioNome(q.funcionario_id).toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      clienteNome.includes(searchLower) ||
+      servicoNome.includes(searchLower) ||
+      funcionarioNome.includes(searchLower)
+    );
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -428,29 +461,64 @@ export default function Agendamentos() {
     setIsDialogOpen(true);
   };
 
-  const handleQuitar = (agendamento: Agendamento) => {
-    setEditingAgendamento(agendamento);
-    const dataHoraUTC = new Date(agendamento.data_hora);
-    const ano = dataHoraUTC.getFullYear();
-    const mes = String(dataHoraUTC.getMonth() + 1).padStart(2, "0");
-    const dia = String(dataHoraUTC.getDate()).padStart(2, "0");
-    const hora = String(dataHoraUTC.getHours()).padStart(2, "0");
-    const minuto = String(dataHoraUTC.getMinutes()).padStart(2, "0");
+  const [formaPagamentoQuitar, setFormaPagamentoQuitar] = useState("");
 
-    setFormData({
-      clienteId: agendamento.cliente_id,
-      servicoId: agendamento.servico_id,
-      funcionarioId: agendamento.funcionario_id || "",
-      data: `${ano}-${mes}-${dia}`,
-      hora: `${hora}:${minuto}`,
-      status: "concluido",
-      forma_pagamento:
-        agendamento.forma_pagamento === "em_aberto"
-          ? ""
-          : agendamento.forma_pagamento || "",
-      observacoes: agendamento.observacoes || "",
-    });
-    setIsDialogOpen(true);
+  const handleQuitar = (agendamento: Agendamento) => {
+    setQuitandoAgendamento(agendamento);
+    setFormaPagamentoQuitar(
+      agendamento.forma_pagamento && agendamento.forma_pagamento !== "em_aberto"
+        ? agendamento.forma_pagamento
+        : "",
+    );
+  };
+
+  const confirmarQuitacao = async () => {
+    if (!quitandoAgendamento) return;
+    if (!formaPagamentoQuitar) {
+      toast.error("Selecione a forma de pagamento.");
+      return;
+    }
+
+    try {
+      const servico = servicos.find(
+        (s) => s.id === quitandoAgendamento.servico_id,
+      );
+      const valorServico = Number(servico?.preco || 0);
+
+      const { error: insertError } = await supabase
+        .from("servicos_quitados" as any)
+        .insert([
+          {
+            agendamento_id: quitandoAgendamento.id,
+            cliente_id: quitandoAgendamento.cliente_id,
+            servico_id: quitandoAgendamento.servico_id,
+            funcionario_id: quitandoAgendamento.funcionario_id,
+            funcionario: quitandoAgendamento.funcionario,
+            data_hora: quitandoAgendamento.data_hora,
+            valor_servico: valorServico,
+            forma_pagamento: formaPagamentoQuitar,
+            observacoes: quitandoAgendamento.observacoes,
+          },
+        ]);
+
+      if (insertError) throw insertError;
+
+      // Remover o agendamento original (vai para a aba Quitados via nova tabela)
+      const { error: deleteError } = await supabase
+        .from("agendamentos")
+        .delete()
+        .eq("id", quitandoAgendamento.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success("Serviço quitado com sucesso!");
+      setQuitandoAgendamento(null);
+      setFormaPagamentoQuitar("");
+      fetchData();
+    } catch (error: any) {
+      console.error("Erro ao quitar serviço:", error);
+      toast.error(error?.message || "Erro ao quitar serviço");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -941,7 +1009,7 @@ export default function Agendamentos() {
           </TabsTrigger>
           <TabsTrigger value="quitados" className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
-            Quitados ({agendamentosQuitados.length})
+            Quitados ({filteredQuitados.length})
           </TabsTrigger>
         </TabsList>
 
@@ -989,20 +1057,188 @@ export default function Agendamentos() {
               )}
             </TabsContent>
             <TabsContent value="quitados" className="mt-0">
-              {agendamentosQuitados.length === 0 ? (
+              {filteredQuitados.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Nenhum agendamento quitado.
+                  Nenhum serviço quitado.
                 </p>
               ) : (
-                <>
-                  {renderMobileCards(agendamentosQuitados)}
-                  {renderDesktopTable(agendamentosQuitados)}
-                </>
+                <div className="space-y-3">
+                  {/* Mobile */}
+                  <div className="space-y-3 md:hidden">
+                    {filteredQuitados.map((q) => (
+                      <div
+                        key={q.id}
+                        className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2"
+                      >
+                        <p className="font-medium text-foreground">
+                          {getClienteNome(q.cliente_id)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {getServicoNome(q.servico_id)} —{" "}
+                          {getFuncionarioNome(q.funcionario_id)}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            Atendido em{" "}
+                            {new Date(q.data_hora).toLocaleDateString("pt-BR")}
+                          </span>
+                          <span>
+                            Quitado em{" "}
+                            {new Date(q.data_quitacao).toLocaleDateString(
+                              "pt-BR",
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {getPaymentLabel(q.forma_pagamento)}
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            R$ {Number(q.valor_servico).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table className="min-w-[800px]">
+                      <TableHeader>
+                        <TableRow className="border-border">
+                          <TableHead className="text-muted-foreground">Cliente</TableHead>
+                          <TableHead className="text-muted-foreground">Serviço</TableHead>
+                          <TableHead className="text-muted-foreground">Funcionário</TableHead>
+                          <TableHead className="text-muted-foreground">Atendimento</TableHead>
+                          <TableHead className="text-muted-foreground">Quitado em</TableHead>
+                          <TableHead className="text-muted-foreground">Pagamento</TableHead>
+                          <TableHead className="text-muted-foreground text-right">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredQuitados.map((q) => (
+                          <TableRow key={q.id} className="border-border hover:bg-secondary/20">
+                            <TableCell className="font-medium text-foreground">
+                              {getClienteNome(q.cliente_id)}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {getServicoNome(q.servico_id)}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {getFuncionarioNome(q.funcionario_id)}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {new Date(q.data_hora).toLocaleString("pt-BR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {new Date(q.data_quitacao).toLocaleDateString("pt-BR")}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {getPaymentLabel(q.forma_pagamento)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-foreground">
+                              R$ {Number(q.valor_servico).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               )}
             </TabsContent>
           </CardContent>
         </Card>
       </Tabs>
+
+      {/* Dialog de quitação */}
+      <Dialog
+        open={!!quitandoAgendamento}
+        onOpenChange={(open) => {
+          if (!open) {
+            setQuitandoAgendamento(null);
+            setFormaPagamentoQuitar("");
+          }
+        }}
+      >
+        <DialogContent className="gradient-card border-border w-[95vw] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">
+              Quitar serviço
+            </DialogTitle>
+          </DialogHeader>
+          {quitandoAgendamento && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>
+                  <span className="text-foreground font-medium">Cliente:</span>{" "}
+                  {getClienteNome(quitandoAgendamento.cliente_id)}
+                </p>
+                <p>
+                  <span className="text-foreground font-medium">Serviço:</span>{" "}
+                  {getServicoNome(quitandoAgendamento.servico_id)}
+                </p>
+                <p>
+                  <span className="text-foreground font-medium">Valor:</span> R${" "}
+                  {Number(
+                    servicos.find(
+                      (s) => s.id === quitandoAgendamento.servico_id,
+                    )?.preco || 0,
+                  ).toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <Label className="text-foreground">Forma de pagamento</Label>
+                <Select
+                  value={formaPagamentoQuitar}
+                  onValueChange={setFormaPagamentoQuitar}
+                >
+                  <SelectTrigger className="bg-input border-border text-foreground">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {PAYMENT_OPTIONS.filter(
+                      (o) => o.value !== "em_aberto",
+                    ).map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-foreground"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={confirmarQuitacao}
+                  className="flex-1 bg-[hsl(340,80%,55%)] hover:bg-[hsl(340,80%,45%)] text-white"
+                >
+                  Confirmar quitação
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setQuitandoAgendamento(null);
+                    setFormaPagamentoQuitar("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
