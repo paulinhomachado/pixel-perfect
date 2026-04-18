@@ -1009,7 +1009,7 @@ export default function Agendamentos() {
           </TabsTrigger>
           <TabsTrigger value="quitados" className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
-            Quitados ({agendamentosQuitados.length})
+            Quitados ({filteredQuitados.length})
           </TabsTrigger>
         </TabsList>
 
@@ -1057,15 +1057,99 @@ export default function Agendamentos() {
               )}
             </TabsContent>
             <TabsContent value="quitados" className="mt-0">
-              {agendamentosQuitados.length === 0 ? (
+              {filteredQuitados.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Nenhum agendamento quitado.
+                  Nenhum serviço quitado.
                 </p>
               ) : (
-                <>
-                  {renderMobileCards(agendamentosQuitados)}
-                  {renderDesktopTable(agendamentosQuitados)}
-                </>
+                <div className="space-y-3">
+                  {/* Mobile */}
+                  <div className="space-y-3 md:hidden">
+                    {filteredQuitados.map((q) => (
+                      <div
+                        key={q.id}
+                        className="p-4 rounded-lg bg-secondary/30 border border-border space-y-2"
+                      >
+                        <p className="font-medium text-foreground">
+                          {getClienteNome(q.cliente_id)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {getServicoNome(q.servico_id)} —{" "}
+                          {getFuncionarioNome(q.funcionario_id)}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            Atendido em{" "}
+                            {new Date(q.data_hora).toLocaleDateString("pt-BR")}
+                          </span>
+                          <span>
+                            Quitado em{" "}
+                            {new Date(q.data_quitacao).toLocaleDateString(
+                              "pt-BR",
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {getPaymentLabel(q.forma_pagamento)}
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            R$ {Number(q.valor_servico).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table className="min-w-[800px]">
+                      <TableHeader>
+                        <TableRow className="border-border">
+                          <TableHead className="text-muted-foreground">Cliente</TableHead>
+                          <TableHead className="text-muted-foreground">Serviço</TableHead>
+                          <TableHead className="text-muted-foreground">Funcionário</TableHead>
+                          <TableHead className="text-muted-foreground">Atendimento</TableHead>
+                          <TableHead className="text-muted-foreground">Quitado em</TableHead>
+                          <TableHead className="text-muted-foreground">Pagamento</TableHead>
+                          <TableHead className="text-muted-foreground text-right">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredQuitados.map((q) => (
+                          <TableRow key={q.id} className="border-border hover:bg-secondary/20">
+                            <TableCell className="font-medium text-foreground">
+                              {getClienteNome(q.cliente_id)}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {getServicoNome(q.servico_id)}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {getFuncionarioNome(q.funcionario_id)}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {new Date(q.data_hora).toLocaleString("pt-BR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {new Date(q.data_quitacao).toLocaleDateString("pt-BR")}
+                            </TableCell>
+                            <TableCell className="text-foreground">
+                              {getPaymentLabel(q.forma_pagamento)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-foreground">
+                              R$ {Number(q.valor_servico).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               )}
             </TabsContent>
           </CardContent>
