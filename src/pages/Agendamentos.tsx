@@ -71,6 +71,20 @@ type Agendamento = {
   observacoes: string | null;
 };
 
+type ServicoQuitado = {
+  id: string;
+  agendamento_id: string;
+  cliente_id: string;
+  servico_id: string;
+  funcionario_id: string | null;
+  funcionario: string;
+  data_hora: string;
+  valor_servico: number;
+  forma_pagamento: string;
+  observacoes: string | null;
+  data_quitacao: string;
+};
+
 const PAYMENT_OPTIONS = [
   { value: "em_aberto", label: "Em aberto" },
   { value: "dinheiro", label: "Dinheiro" },
@@ -118,6 +132,7 @@ const nextDayStart = (data: string) => {
 
 export default function Agendamentos() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [quitados, setQuitados] = useState<ServicoQuitado[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
@@ -200,10 +215,21 @@ export default function Agendamentos() {
 
       if (funcionariosError) throw funcionariosError;
 
+      // Buscar serviços quitados
+      const { data: quitadosData, error: quitadosError } = await supabase
+        .from("servicos_quitados" as any)
+        .select("*")
+        .order("data_quitacao", { ascending: false });
+
+      if (quitadosError) {
+        console.warn("Não foi possível carregar serviços quitados:", quitadosError);
+      }
+
       setAgendamentos(agendamentosData || []);
       setClientes(clientesData || []);
       setServicos(servicosData || []);
       setFuncionarios(funcionariosData || []);
+      setQuitados((quitadosData as any) || []);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast.error("Erro ao carregar dados");
