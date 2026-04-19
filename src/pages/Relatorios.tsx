@@ -88,6 +88,27 @@ export default function Relatorios() {
 
       if (transacoesError) throw transacoesError;
 
+      // Buscar serviços quitados do período (fonte real de forma_pagamento e serviço quitado)
+      const { data: quitados, error: quitadosError } = await supabase
+        .from('servicos_quitados' as any)
+        .select('*')
+        .gte('data_quitacao', dataInicio)
+        .lt('data_quitacao', dataFimExclusivaIso);
+
+      // Não bloqueia se a tabela ainda não existir no backend
+      if (quitadosError) {
+        console.warn('servicos_quitados indisponível:', quitadosError);
+      }
+
+      // Buscar serviços para resolver nomes a partir do servico_id dos quitados
+      const { data: servicosCatalog } = await supabase
+        .from('servicos')
+        .select('id, nome, preco');
+      const servicoById = new Map<string, { nome: string; preco: number }>();
+      (servicosCatalog || []).forEach((s: any) => {
+        servicoById.set(s.id, { nome: s.nome, preco: Number(s.preco) });
+      });
+
       // Buscar regras de comissão para fallback quando não houver transação financeira
       const { data: comissoes, error: comissoesError } = await supabase
         .from('comissoes')
@@ -171,76 +192,31 @@ export default function Relatorios() {
         return acc;
       }, []) || [];
 
-      // Serviços mais populares
-      const servicosMap = new Map();
-      agendamentosCompletos.forEach(agendamento => {
-        const servico = agendamento.servicos;
-        if (servico) {
-          const key = servico.nome;
-          if (servicosMap.has(key)) {
-            const existing = servicosMap.get(key);
-            servicosMap.set(key, {
-              nome: key,
-              quantidade: existing.quantidade + 1,
-              valor: existing.valor + Number(servico.preco)
-            });
-          } else {
-            servicosMap.set(key, {
-              nome: key,
-              quantidade: 1,
-              valor: Number(servico.preco)
-            });
-          }
+      // Serviços mais populares: combina agendamentos concluídos + servicos_quitados
+      const servicosMap = new Map<string, { nome: string; quantidade: number; valor: number }>();
+      const addServico = (nome: string, valor: number) => {
+        if (!nome) return;
+        const existing = servicosMap.get(nome);
+        if (existing) {
+          servicosMap.set(nome, { nome, quantidade: existing.quantidade + 1, valor: existing.valor + valor });
+        } else {
+          servicosMap.set(nome, { nome, quantidade: 1, valor });
         }
+      };
+      agendamentosCompletos.forEach((agendamento: any) => {
+        const s = agendamento.servicos;
+        if (s) addServico(s.nome, Number(s.preco));
+      });
+      (quitados || []).forEach((q: any) => {
+        // Evita contar duas vezes o mesmo agendamento
+        if (q.agendamento_id && agendamentosCompletos.some((a: any) => a.id === q.agendamento_id)) return;
+        const fromCatalog = q.servico_id ? servicoById.get(q.servico_id) : null;
+        const nome = fromCatalog?.nome || 'Serviço';
+        const valor = Number(q.valor_servico ?? fromCatalog?.preco ?? 0);
+        addServico(nome, valor);
       });
 
       const servicosPopulares = Array.from(servicosMap.values())
-        .sort((a, b) => b.quantidade - a.quantidade);
-
-      // Performance dos profissionais
-      const profissionaisMap = new Map();
-      transacoesEfetivas.forEach((transacao: any) => {
-        const nome = transacao.funcionarios?.nome || 'Não informado';
-        if (profissionaisMap.has(nome)) {
-          const existing = profissionaisMap.get(nome);
-          profissionaisMap.set(nome, {
-            nome,
-            servicos: existing.servicos + 1,
-            comissao: existing.comissao + Number(transacao.valor_comissao)
-          });
-        } else {
-          profissionaisMap.set(nome, {
-            nome,
-            servicos: 1,
-            comissao: Number(transacao.valor_comissao)
-          });
-        }
-      });
-
-      const performanceProfissionais = Array.from(profissionaisMap.values())
-        .sort((a, b) => b.servicos - a.servicos);
-
-      const formasPagamentoMap = new Map<string, number>();
-      transacoesEfetivas.forEach((transacao: any) => {
-        const forma = transacao.forma_pagamento || 'em_aberto';
-        formasPagamentoMap.set(forma, (formasPagamentoMap.get(forma) || 0) + 1);
-      });
-
-      const pagamentoLabelMap: Record<string, string> = {
-        dinheiro: 'Dinheiro',
-        cartao_debito: 'Cartão Débito',
-        cartao_credito: 'Cartão de Crédito',
-        pix: 'Pix',
-        pacote: 'Pacote',
-        em_aberto: 'Em aberto',
-        nao_informado: 'Não informado',
-      };
-
-      const formasPagamento = Array.from(formasPagamentoMap.entries())
-        .map(([forma, quantidade]) => ({
-          forma: pagamentoLabelMap[forma] || forma,
-          quantidade,
-        }))
         .sort((a, b) => b.quantidade - a.quantidade);
 
       setRelatorio({
