@@ -438,15 +438,29 @@ export default function Relatorios() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={relatorio.formasPagamento}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="forma" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip formatter={(value) => [Number(value), 'Quantidade']} />
-                  <Bar dataKey="quantidade" fill="hsl(var(--primary))" />
-                </BarChart>
-              </ResponsiveContainer>
+              {relatorio.formasPagamento.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum pagamento registrado no período.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={relatorio.formasPagamento}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ forma, quantidade }) => `${forma}: ${quantidade}`}
+                      outerRadius={100}
+                      dataKey="quantidade"
+                      nameKey="forma"
+                    >
+                      {relatorio.formasPagamento.map((_, index) => (
+                        <Cell key={`cell-fp-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [Number(value), name]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -454,7 +468,12 @@ export default function Relatorios() {
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Serviços Mais Populares</CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-base md:text-lg">Serviços Mais Populares</CardTitle>
+                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                    {relatorio.servicosPopulares.reduce((sum, s) => sum + s.quantidade, 0)} no total
+                  </span>
+                </div>
                 <CardDescription>Ranking dos serviços mais realizados</CardDescription>
               </CardHeader>
               <CardContent>
@@ -473,7 +492,10 @@ export default function Relatorios() {
                             <p className="text-xs text-muted-foreground">{servico.quantidade} atendimento{servico.quantidade !== 1 ? 's' : ''}</p>
                           </div>
                         </div>
-                        <span className="text-sm font-semibold whitespace-nowrap">R$ {Number(servico.valor).toFixed(2)}</span>
+                        <div className="flex flex-col items-end">
+                          <span className="text-lg font-bold leading-none text-primary">{servico.quantidade}</span>
+                          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">R$ {Number(servico.valor).toFixed(2)}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
