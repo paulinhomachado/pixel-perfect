@@ -219,6 +219,55 @@ export default function Relatorios() {
       const servicosPopulares = Array.from(servicosMap.values())
         .sort((a, b) => b.quantidade - a.quantidade);
 
+      // Performance dos profissionais (a partir das transações efetivas)
+      const profissionaisMap = new Map<string, { nome: string; servicos: number; comissao: number }>();
+      transacoesEfetivas.forEach((transacao: any) => {
+        const nome = transacao.funcionarios?.nome || 'Não informado';
+        const existing = profissionaisMap.get(nome);
+        if (existing) {
+          profissionaisMap.set(nome, {
+            nome,
+            servicos: existing.servicos + 1,
+            comissao: existing.comissao + Number(transacao.valor_comissao || 0),
+          });
+        } else {
+          profissionaisMap.set(nome, {
+            nome,
+            servicos: 1,
+            comissao: Number(transacao.valor_comissao || 0),
+          });
+        }
+      });
+      const performanceProfissionais = Array.from(profissionaisMap.values())
+        .sort((a, b) => b.servicos - a.servicos);
+
+      // Formas de pagamento: prioriza servicos_quitados; se vazio, usa transacoes
+      const formasPagamentoMap = new Map<string, number>();
+      const fontePagamento: any[] = (quitados && quitados.length > 0)
+        ? quitados
+        : transacoesEfetivas;
+      fontePagamento.forEach((item: any) => {
+        const forma = (item.forma_pagamento && String(item.forma_pagamento).trim()) || 'em_aberto';
+        formasPagamentoMap.set(forma, (formasPagamentoMap.get(forma) || 0) + 1);
+      });
+
+      const pagamentoLabelMap: Record<string, string> = {
+        dinheiro: 'Dinheiro',
+        cartao_debito: 'Cartão Débito',
+        cartao_credito: 'Cartão de Crédito',
+        pix: 'Pix',
+        pacote: 'Pacote',
+        em_aberto: 'Em aberto',
+        nao_informado: 'Não informado',
+      };
+
+      const formasPagamento = Array.from(formasPagamentoMap.entries())
+        .map(([forma, quantidade]) => ({
+          forma: pagamentoLabelMap[forma] || forma,
+          quantidade,
+        }))
+        .sort((a, b) => b.quantidade - a.quantidade);
+
       setRelatorio({
         faturamentoTotal,
         servicosRealizados: agendamentosCompletos.length,
