@@ -8,49 +8,61 @@ import { HorariosFuncionamento } from "@/components/HorariosFuncionamento";
 type Cliente = Tables<'clientes'>;
 type Agendamento = Tables<'agendamentos'>;
 type Servico = Tables<'servicos'>;
+type Quitado = {
+  id: string;
+  servico_id: string | null;
+  valor_servico: number | string | null;
+  data_quitacao: string | null;
+  data_hora?: string | null;
+};
 
 export default function Dashboard() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [quitados, setQuitados] = useState<Quitado[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const hoje = new Date().toISOString().split('T')[0];
+  const agora = new Date();
+  const hoje = agora.toISOString().split('T')[0];
+  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
+
+  const fetchData = async () => {
+    try {
+      const [clientesRes, agendamentosRes, servicosRes, quitadosRes] = await Promise.all([
+        supabase.from('clientes').select('*'),
+        supabase.from('agendamentos').select('*'),
+        supabase.from('servicos').select('*'),
+        supabase.from('servicos_quitados' as any).select('*'),
+      ]);
+
+      if (clientesRes.data) setClientes(clientesRes.data);
+      if (agendamentosRes.data) setAgendamentos(agendamentosRes.data);
+      if (servicosRes.data) setServicos(servicosRes.data);
+      if (quitadosRes && !quitadosRes.error && quitadosRes.data) {
+        setQuitados(quitadosRes.data as unknown as Quitado[]);
+      } else if (quitadosRes?.error) {
+        console.warn('servicos_quitados indisponível:', quitadosRes.error);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch initial data
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [clientesRes, agendamentosRes, servicosRes] = await Promise.all([
-          supabase.from('clientes').select('*'),
-          supabase.from('agendamentos').select('*'),
-          supabase.from('servicos').select('*')
-        ]);
-
-        if (clientesRes.data) setClientes(clientesRes.data);
-        if (agendamentosRes.data) setAgendamentos(agendamentosRes.data);
-        if (servicosRes.data) setServicos(servicosRes.data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
-  // Real-time subscriptions (no-op with current Hostinger client)
+  // Atualiza a cada 30s para refletir quitações/novos agendamentos
   useEffect(() => {
-    const clientesChannel = supabase.channel().on().subscribe();
-    const agendamentosChannel = supabase.channel().on().subscribe();
-    const servicosChannel = supabase.channel().on().subscribe();
-
-    return () => {
-      supabase.removeChannel();
-      supabase.removeChannel();
-      supabase.removeChannel();
-    };
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -66,20 +78,44 @@ export default function Dashboard() {
 
   // Cálculos dos cards
   const totalClientes = clientes.length;
+
   const agendamentosHoje = agendamentos.filter(a => {
     const agendamentoDate = new Date(a.data_hora).toISOString().split('T')[0];
     return agendamentoDate === hoje;
   }).length;
-  
-  const servicosRealizados = agendamentos.filter(a => a.status === 'concluido').length;
-  
-  // Receita aproximada do mês (baseada nos agendamentos concluídos)
-  const receitaMes = agendamentos
-    .filter(a => a.status === 'concluido')
-    .reduce((total, agendamento) => {
-      const servico = servicos.find(s => s.id === agendamento.servico_id);
+
+  // Serviços realizados = agendamentos concluídos/quitados + serviços quitados avulsos
+  const idsAgendamentosQuitados = new Set(
+    quitados.map((q: any) => q.agendamento_id).filter(Boolean)
+  );
+  const agendamentosConcluidos = agendamentos.filter(
+    a => a.status === 'concluido' || a.status === 'quitado'
+  );
+  const quitadosAvulsos = quitados.filter(
+    (q: any) => !q.agendamento_id || !agendamentos.some(a => a.id === q.agendamento_id)
+  );
+  const servicosRealizados = agendamentosConcluidos.length + quitadosAvulsos.length;
+
+  // Receita do mês: usa servicos_quitados quando disponível; fallback para agendamentos concluídos
+  const dentroDoMes = (iso?: string | null) => {
+    if (!iso) return false;
+    const d = new Date(iso);
+    return d >= inicioMes && d < fimMes;
+  };
+
+  const receitaQuitados = quitados
+    .filter(q => dentroDoMes(q.data_quitacao || q.data_hora))
+    .reduce((total, q) => total + Number(q.valor_servico || 0), 0);
+
+  const receitaAgendamentos = agendamentos
+    .filter(a => (a.status === 'concluido' || a.status === 'quitado') && dentroDoMes(a.data_hora))
+    .filter(a => !idsAgendamentosQuitados.has(a.id)) // evita duplicar com quitados
+    .reduce((total, a) => {
+      const servico = servicos.find(s => s.id === a.servico_id);
       return total + (servico ? Number(servico.preco) : 0);
     }, 0);
+
+  const receitaMes = receitaQuitados + receitaAgendamentos;
 
   const cards = [
     {
