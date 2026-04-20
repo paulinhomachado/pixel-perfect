@@ -60,6 +60,8 @@ interface ConfiguracoesBarbearia {
   telefone: string;
   horario_abertura: string;
   horario_fechamento: string;
+  horario_almoco_inicio: string | null;
+  horario_almoco_fim: string | null;
   logo_url: string;
   banner_url: string;
 }
