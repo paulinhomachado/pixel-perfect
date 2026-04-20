@@ -364,7 +364,10 @@ export default function Relatorios() {
                 <Scissors className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </CardHeader>
               <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                <div className="text-lg md:text-2xl font-bold">{relatorio.servicosRealizados}</div>
+                <div className="text-lg md:text-2xl font-bold text-primary">{relatorio.servicosRealizados}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {relatorio.servicosRealizados === 1 ? 'atendimento concluído' : 'atendimentos concluídos'}
+                </p>
               </CardContent>
             </Card>
 
