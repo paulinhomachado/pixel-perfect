@@ -268,10 +268,17 @@ export default function Relatorios() {
         }))
         .sort((a, b) => b.quantidade - a.quantidade);
 
+      // Quitados avulsos (não vinculados a um agendamento já contado) — evita duplicidade
+      const quitadosAvulsos = (quitados || []).filter((q: any) => {
+        if (!q.agendamento_id) return true;
+        return !agendamentosCompletos.some((a: any) => a.id === q.agendamento_id);
+      });
+      const totalConcluidos = agendamentosCompletos.length + quitadosAvulsos.length;
+
       setRelatorio({
         faturamentoTotal,
-        servicosRealizados: agendamentosCompletos.length,
-        agendamentosCompletos: agendamentosCompletos.length,
+        servicosRealizados: totalConcluidos,
+        agendamentosCompletos: totalConcluidos,
         agendamentosCancelados: agendamentosCancelados.length,
         valorProfissionais,
         valorLiquido,
