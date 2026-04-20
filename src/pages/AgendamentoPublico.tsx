@@ -162,6 +162,8 @@ export default function AgendamentoPublico() {
         configuracoes.horario_fechamento,
         agendamentos || [],
         servicoSelecionado.tempo_medio,
+        configuracoes.horario_almoco_inicio,
+        configuracoes.horario_almoco_fim,
       );
 
       setHorariosDisponiveis(horarios);
