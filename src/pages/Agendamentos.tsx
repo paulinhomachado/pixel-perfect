@@ -308,12 +308,21 @@ export default function Agendamentos() {
         return;
       }
 
-      const requerPagamento =
-        formData.status === "concluido" || formData.status === "quitado";
+      // Forma de pagamento só é obrigatória quando o status é "quitado".
+      // Quando "concluido", o pagamento fica como "em_aberto" por padrão
+      // até ser quitado posteriormente pelo botão "Quitar".
+      const requerPagamento = formData.status === "quitado";
       if (requerPagamento && !formData.forma_pagamento) {
         toast.error("Selecione a forma de pagamento.");
         return;
       }
+
+      const formaPagamentoFinal =
+        formData.status === "concluido"
+          ? "em_aberto"
+          : requerPagamento
+            ? formData.forma_pagamento
+            : null;
 
       // Criar data/hora no timezone local do Brasil (UTC-3)
       const dataHora = formatLocalDateTime(formData.data, formData.hora);
@@ -384,7 +393,7 @@ export default function Agendamentos() {
             funcionario: getFuncionarioNome(formData.funcionarioId),
             data_hora: dataHora,
             status: formData.status,
-            forma_pagamento: requerPagamento ? formData.forma_pagamento : null,
+            forma_pagamento: formaPagamentoFinal,
             observacoes: formData.observacoes || null,
           })
           .eq("id", editingAgendamento.id);
@@ -404,7 +413,7 @@ export default function Agendamentos() {
             funcionario: getFuncionarioNome(formData.funcionarioId),
             data_hora: dataHora,
             status: formData.status,
-            forma_pagamento: requerPagamento ? formData.forma_pagamento : null,
+            forma_pagamento: formaPagamentoFinal,
             observacoes: formData.observacoes || null,
           },
         ]);
@@ -835,7 +844,7 @@ export default function Agendamentos() {
                 </div>
               </div>
 
-              {(formData.status === "concluido" || formData.status === "quitado") && (
+              {formData.status === "quitado" && (
                 <div>
                   <Label htmlFor="forma_pagamento" className="text-foreground">
                     Forma de Pagamento
