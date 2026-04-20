@@ -60,6 +60,8 @@ interface ConfiguracoesBarbearia {
   telefone: string;
   horario_abertura: string;
   horario_fechamento: string;
+  horario_almoco_inicio: string | null;
+  horario_almoco_fim: string | null;
   logo_url: string;
   banner_url: string;
 }
@@ -160,6 +162,8 @@ export default function AgendamentoPublico() {
         configuracoes.horario_fechamento,
         agendamentos || [],
         servicoSelecionado.tempo_medio,
+        configuracoes.horario_almoco_inicio,
+        configuracoes.horario_almoco_fim,
       );
 
       setHorariosDisponiveis(horarios);
@@ -177,6 +181,8 @@ export default function AgendamentoPublico() {
     fechamento: string,
     agendamentos: any[],
     duracaoServico: number,
+    almocoInicio?: string | null,
+    almocoFim?: string | null,
   ): string[] => {
     const horarios: string[] = [];
     const [horaAbertura, minutoAbertura] = abertura.split(":").map(Number);
@@ -186,6 +192,16 @@ export default function AgendamentoPublico() {
 
     const inicioMinutos = horaAbertura * 60 + minutoAbertura;
     const fimMinutos = horaFechamento * 60 + minutoFechamento;
+
+    // Intervalo de almoço (em minutos do dia)
+    let almocoIniMin: number | null = null;
+    let almocoFimMin: number | null = null;
+    if (almocoInicio && almocoFim) {
+      const [hAi, mAi] = almocoInicio.split(":").map(Number);
+      const [hAf, mAf] = almocoFim.split(":").map(Number);
+      almocoIniMin = hAi * 60 + mAi;
+      almocoFimMin = hAf * 60 + mAf;
+    }
 
     // Criar lista de horários ocupados
     const horariosOcupados = agendamentos.map((agendamento) => {
@@ -199,7 +215,7 @@ export default function AgendamentoPublico() {
     // Gerar slots de 30 em 30 minutos
     for (
       let minutos = inicioMinutos;
-      minutos < fimMinutos - duracaoServico;
+      minutos + duracaoServico <= fimMinutos;
       minutos += 30
     ) {
       const fimSlot = minutos + duracaoServico;
@@ -209,7 +225,14 @@ export default function AgendamentoPublico() {
         (ocupado) => minutos < ocupado.fim && fimSlot > ocupado.inicio,
       );
 
-      if (!temConflito) {
+      // Verificar se cruza o horário de almoço
+      const conflitaAlmoco =
+        almocoIniMin !== null &&
+        almocoFimMin !== null &&
+        minutos < almocoFimMin &&
+        fimSlot > almocoIniMin;
+
+      if (!temConflito && !conflitaAlmoco) {
         const hora = Math.floor(minutos / 60);
         const minuto = minutos % 60;
         horarios.push(
