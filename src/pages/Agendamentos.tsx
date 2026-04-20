@@ -393,7 +393,7 @@ export default function Agendamentos() {
             funcionario: getFuncionarioNome(formData.funcionarioId),
             data_hora: dataHora,
             status: formData.status,
-            forma_pagamento: requerPagamento ? formData.forma_pagamento : null,
+            forma_pagamento: formaPagamentoFinal,
             observacoes: formData.observacoes || null,
           })
           .eq("id", editingAgendamento.id);
@@ -413,7 +413,7 @@ export default function Agendamentos() {
             funcionario: getFuncionarioNome(formData.funcionarioId),
             data_hora: dataHora,
             status: formData.status,
-            forma_pagamento: requerPagamento ? formData.forma_pagamento : null,
+            forma_pagamento: formaPagamentoFinal,
             observacoes: formData.observacoes || null,
           },
         ]);
@@ -844,7 +844,7 @@ export default function Agendamentos() {
                 </div>
               </div>
 
-              {(formData.status === "concluido" || formData.status === "quitado") && (
+              {formData.status === "quitado" && (
                 <div>
                   <Label htmlFor="forma_pagamento" className="text-foreground">
                     Forma de Pagamento
