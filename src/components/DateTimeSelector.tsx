@@ -206,13 +206,17 @@ export function DateTimeSelector({
 
     while (horarioAtual < horarioFim) {
       const horarioStr = format(horarioAtual, "HH:mm");
+      const fimSlot = addMinutes(horarioAtual, tempoServico);
 
-      // Verifica se é horário de almoço
+      // Verifica se o slot se sobrepõe ao horário de almoço (qualquer interseção bloqueia)
       const ehHorarioAlmoco =
         almocoInicio &&
         almocoFim &&
-        horarioAtual >= almocoInicio &&
-        horarioAtual < almocoFim;
+        horarioAtual < almocoFim &&
+        fimSlot > almocoInicio;
+
+      // Bloqueia se o slot ultrapassar o horário de fechamento
+      const ultrapassaFechamento = fimSlot > horarioFim;
 
       // Se for hoje, só mostrar horários futuros
       const ehHorarioBloqueado = ehHoje && horarioAtual < limiteAntecedencia;
