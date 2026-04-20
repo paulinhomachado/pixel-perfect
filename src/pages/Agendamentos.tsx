@@ -308,12 +308,21 @@ export default function Agendamentos() {
         return;
       }
 
-      const requerPagamento =
-        formData.status === "concluido" || formData.status === "quitado";
+      // Forma de pagamento só é obrigatória quando o status é "quitado".
+      // Quando "concluido", o pagamento fica como "em_aberto" por padrão
+      // até ser quitado posteriormente pelo botão "Quitar".
+      const requerPagamento = formData.status === "quitado";
       if (requerPagamento && !formData.forma_pagamento) {
         toast.error("Selecione a forma de pagamento.");
         return;
       }
+
+      const formaPagamentoFinal =
+        formData.status === "concluido"
+          ? "em_aberto"
+          : requerPagamento
+            ? formData.forma_pagamento
+            : null;
 
       // Criar data/hora no timezone local do Brasil (UTC-3)
       const dataHora = formatLocalDateTime(formData.data, formData.hora);
