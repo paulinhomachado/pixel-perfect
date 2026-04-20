@@ -430,9 +430,20 @@ export default function Relatorios() {
             <Card>
               <CardHeader>
                 <CardTitle>Status dos Agendamentos</CardTitle>
+                <CardDescription>Total de concluídos e cancelados no período</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="rounded-lg border bg-primary/5 p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Concluídos</p>
+                    <p className="text-2xl font-bold text-primary">{relatorio.agendamentosCompletos}</p>
+                  </div>
+                  <div className="rounded-lg border bg-destructive/5 p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Cancelados</p>
+                    <p className="text-2xl font-bold text-destructive">{relatorio.agendamentosCancelados}</p>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={statusData}
