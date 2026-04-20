@@ -230,7 +230,12 @@ export function DateTimeSelector({
         return horarioAtual >= dataAgendamento && horarioAtual < fimAgendamento;
       });
 
-      if (!ehHorarioAlmoco && !ehHorarioBloqueado && !temAgendamento) {
+      if (
+        !ehHorarioAlmoco &&
+        !ehHorarioBloqueado &&
+        !temAgendamento &&
+        !ultrapassaFechamento
+      ) {
         horarios.push(horarioStr);
       }
 
